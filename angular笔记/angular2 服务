@@ -1,0 +1,160 @@
+创建HeroService
+===
+在app目录下创建一个名叫hero.service.ts的文件。
+
+>我们遵循的文件命名约定是：服务名称的小写形式(基本名)，加上`.service`后缀。 
+>如果服务名称包含多个单词，我们就把基本名部分写成中线形式（`dash-case`）。 比如，`SpecialSuperHeroService`服务应该被定义在`special-super-hero.service.ts`文件中。
+```
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class HeroService {
+}
+```
+注意，我们引入了Angular的Injectable函数，并通过@Injectable()装饰器使用这个函数。
+
+>不要忘了写圆括号！如果忘了写，就会导致一个很难诊断的错误。
+
+当TypeScript看到@Injectable()装饰器时，就会记下本服务的元数据。如果Angular需要往这个服务中注入其它依赖，就会使用这些元数据。
+
+此刻，HeroService还没有任何依赖，但我们还是得加上这个装饰器。作为一项最佳实践，无论是出于提高统一性还是减少变更的目的，都应该从一开始就加上@Injectable()装饰器。
+
+Mock英雄数据
+---
+从app.component.ts文件中剪切HEROS数组，并把它粘贴到app目录下一个名叫mock-heroes.ts的文件中。 我们还要把import {Hero}...语句拷贝过来，因为我们的英雄数组用到了Hero类。
+```
+import { Hero } from './hero';
+export const HEROES: Hero[] = [
+  {id: 11, name: 'Mr. Nice'},
+  {id: 12, name: 'Narco'},
+  {id: 13, name: 'Bombasto'},
+  {id: 14, name: 'Celeritas'},
+  {id: 15, name: 'Magneta'},
+  {id: 16, name: 'RubberMan'},
+  {id: 17, name: 'Dynama'},
+  {id: 18, name: 'Dr IQ'},
+  {id: 19, name: 'Magma'},
+  {id: 20, name: 'Tornado'}
+];
+```
+
+同时，回到刚剪切出HEROES数组的app.component.ts文件，我们留下了一个尚未初始化的heroes属性：
+
+app/app.component.ts (heroes property)
+```
+heroes: Hero[];
+```
+返回模拟的英雄数据
+---
+回到HeroService，我们导入HEROES常量，并在getHeroes方法中返回它。 我们的HeroService服务现在看起来是这样：
+
+app/hero.service.ts
+```
+import { Injectable } from '@angular/core';
+
+import { Hero } from './hero';
+import { HEROES } from './mock-heroes';
+
+@Injectable()
+export class HeroService {
+  getHeroes(): Hero[] {
+    return HEROES;
+  }
+}
+```
+使用HeroService服务
+---
+我们可以在多个组件中使用HeroService服务了，先从AppComponent开始。
+通常，我们会从导入要用的东西开始，比如HeroService。
+
+```
+import { HeroService } from './hero.service';
+```
+我们要自己 new 出这个 HeroService 吗？不！
+然，我们可以使用new关键字来创建HeroService的实例，就像这样：
+
+```
+heroService = new HeroService(); // don't do this
+```
+但这不是个好主意，有很多理由，比如：
+
+- 我们的组件将不得不弄清楚该如何创建HeroService。 如果有一天我们修改了HeroService的构造函数，我们不得不找出创建过此服务的每一处代码，并修改它。 而给代码打补丁的行为容易导致错误，并增加了测试的负担。
+- 我们每次使用new都会创建一个新的服务实例。 如果这个服务需要缓存英雄列表，并把这个缓存共享给别人呢？怎么办？ 没办法，做不到。
+- 我们把AppComponent锁死在HeroService的一个特定实现中。 我们很难在别的场景中把它换成别的实现。 比如，能离线操作吗？能在测试时使用不同的模拟版本吗？这可不容易。
+- 如果……如果……嘿！这下我们可有得忙了！
+
+注入 HeroService
+---
+用这两行代码代替用new时的一行：
+
+1. 我们添加了一个构造函数，同时还定义了一个私有属性。
+2. 我们添加了组件的providers元数据   :
+
+app/app.component.ts (constructor)
+```
+constructor(private heroService: HeroService) { }  
+```
+
+注入器还不知道该如何创建HeroService。 如果现在运行我们的代码，Angular就会失败，并报错：
+
+```
+EXCEPTION: No provider for HeroService! (AppComponent -> HeroService)
+
+(异常：没有HeroService的提供商！(AppComponent -> HeroService))
+
+```
+我们还得注册一个HeroService提供商，来告诉注入器如何创建HeroService。 要做到这一点，我们应该在@Component组件的元数据底部添加providers数组属性如下：
+```
+providers: [HeroService]
+```
+
+providers数组告诉Angular，当它创建新的AppComponent组件时，也要创建一个HeroService的新实例。 AppComponent会使用那个服务来获取英雄列表，在它组件树中的每一个子组件也同样如此。
+
+AppComponent 中的 getHeroes
+---
+我们已经获得了此服务，并把它存入了私有变量heroService中。我们这就开始使用它。
+停下来想一想。我们可以在同一行内调用此服务并获得数据。
+
+```
+this.heroes = this.heroService.getHeroes();
+```
+ngOnInit 生命周期钩子
+===
+```
+import { OnInit } from '@angular/core';
+
+export class AppComponent implements OnInit {
+  ngOnInit(): void {
+   this.getHeroes();
+  }
+}
+
+```
+
+异步服务与承诺
+---
+我们的`HeroService`立即返回一个模拟的英雄列表，它的`getHeroes`数签名是同步的。
+将来，我们会从远端服务器上获取英雄数据。我们还没调用http，但在未来的章节中我们会希望这么做。
+
+那时候，我们不得不等待服务器返回，并且在等待时，我们没法阻塞UI响应，即使我们想这么做（也不应这么做）也做不到，因为浏览器不会阻塞。
+我们将使用 承诺 。
+
+HeroService会生成一个承诺
+```
+getHeroes(): Promise<Hero[]> {
+  return Promise.resolve(HEROES);
+}
+```
+我们通过返回一个 立即解决的承诺 的方式，模拟了一个超快、零延迟的超级服务器。
+基于承诺的行动
+---
+修改了HeroService之后，我们还要把this.heroes替换为一个承诺，而不再是一个英雄数组。
+
+我们得修改这个实现，把它变成基于承诺的，并在承诺的事情被解决时再行动。 一旦承诺的事情被成功解决，我们就会显示英雄数据。
+
+我们把回调函数作为参数传给承诺对象的then函数：
+```
+getHeroes(): void {
+  this.heroService.getHeroes().then(heroes => this.heroes = heroes);
+}
+```

@@ -1,0 +1,52 @@
+ <!DOCTYPE html>
+ <html v-app="userInfoModele">
+ <meta http-equiv="Content-Type"content="text/html; charset=utf-8">
+ <head>
+
+ </head>
+ <body>
+ 
+ <div class="div-panel panel-primary">
+	<div class="panel-heading">
+		<div class="panel-title">双向数据绑定</div>
+		<div class="panel-body">这里是主体区域
+		
+			<div class="row" >
+				<div class="col-md-12">
+					<form class="from-horizontal" roal="form" ng-controller="UserInfoCtrl">
+						<div class="form-group">
+						{{userInfo.password}}
+							<span>邮箱：</span> 
+							</div>	
+					</form>
+				</div>
+				
+			</div>
+			
+		</div>
+		
+	</div>
+  <!-- 
+
+bootstrap
+
+class="col-md-offset-2 col-md-10"  //offset 这个好像是向右对其
+class="checkbox"
+
+ -->
+ </div>
+ <script type="text/javascript" src="ng-model.js"></script>
+ <script type="text/javascript" src="jquery-1.6.4.js"></script>
+ <script type="text/javascript" src="angular.js"></script>
+ </body>
+
+
+</html>
+
+
+
+
+
+
+
+

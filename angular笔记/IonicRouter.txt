@@ -1,0 +1,79 @@
+Ⅰ.ionic内敛模板
+	<script type="text/ng-temolate' id="a.html">
+		<p>This is the content of the template </p>
+	</script>
+	使用情况
+	1、使用  ng-include  指令 注意单引号
+	<div ng-include="'a.html'"></div>
+	2、$templateCache
+	var partial = $templateCache.get("a.html");
+	3、使用$http
+	$http.get("a.html",{cache:$templateCache})
+	.success(function(d,s){..})
+	.error(function(d,s){...});
+Ⅱ.ionic路由机制
+	ionic.bundle.js 已经打包了 ui-route模块，所以我们使用时不需要单独引入。
+	
+	触发状态迁移 的几种方式 （通俗的讲就是页面跳转的几种方式 ）
+	1. 调用$state.go()方法，这是一个高级的便利方法；
+	2. 点击包含 ui-sref 指令的链接 <a ui-sref="state1">Go State 1</a>
+	3. 导航到与状态相关联的 url。
+	
+Ⅲ.导航图 ion-nav-view
+	和ui-view一样，ion-nav-view总是根据状态的变化，来提取对应的模板并将其在 DOM 树中渲染。
+Ⅳ.模板视图ion-view
+	我们总是使用指令ion-view来作为模板视图内容的容器，这是为了与 ionic 的导航框架保持兼容：	
+	 <script id="..." type="text/ng-template">
+		<ion-view>
+			<!--模板视图内容-->
+		</ion-view>
+	</script>
+	
+	可选属性
+	view-title 标题文字
+	cache-view对模板进行缓存
+	hide-back-button是否隐藏标题栏中的按钮
+	hide-nav-bar是否隐藏导航栏
+Ⅴ.导航栏ion-nav-bar
+	指令用来声明一个居于屏幕顶端的导航栏，它的内容随导航视图的状态变化自动同步变化：
+		<ion-nav-bar></ion-nav-bar>
+	属性：align-title
+	no-tap-scroll点击导航栏的时候是否将内容滚到顶部
+Ⅵ.回退按钮
+	ion-nav-back-butto
+Ⅶ.视图特定按钮
+	在ion-view指令声明的元素内使用ion-nav-sbuttons指令添加一组按钮，ionic的导航框架看到这个指令时，就会自动地将这些按钮 安置到导航栏中。且指令ion-nav-buttons 必须是指令ion-view的直接后代
+		<ion-view>
+			<ion-nav-buttons>
+				<!--按钮定义-->
+			</ion-nav-buttons>
+		</ion-view>
+	ion-nav-buttons的side属性申明这些按钮在导航栏的位置
+		可选值：primary secondary left right
+Ⅷ.定制标题内容
+	导航栏中默认显示所载入模板视图的view-title属性值，但ionic允许我们使用ion-nav-title 指令，使用任意的 HTML 片段改变
+Ⅸ.切换方式nav-transition android ios none
+Ⅹ.定制视图切换方向nav-direction	forward back enter exit swap
+Ⅺ.$ionicNavBarDelegate导航栏脚本接口
+	  	align([direction])标题对齐方式。参数direction是可选的，允许值为：left | right | center，缺省值为 center。
+	showBackButton([show]) - 是否显示回退按钮参数show是可选的，允许值为：true | false，缺省值为 true。
+	showBar(show) - 是否显示导航栏参数 show 的允许值为：true | false 。
+	title(title) - 设置导航栏标题参数 title 为 HTML 字符串。
+Ⅻ.访问历史 : $ionicHistory
+	viewHistory() - 返回视图访问历史数据
+  currentView() - 返回当前视图对象
+  currentHistoryId() - 返回历史 ID
+	currentTitle([val])-设置或读取当前视图的标题参数lval是可选的。无参数调用currentTile()方法则返回当前视图的标题。
+	backView()返回历史栈中前一个视图对象如果从视图A导航到视图B，那么视图A 就是视图 B 的前一个视图对象。
+  backTitle() - 返回历史栈中前一个视图的标题
+  forwardView() - 返回历史栈中的下一个视图对象
+  currentStateName() - 返回当前所处状态名
+  goBack() - 切换到历史栈中前一个视图
+	clearHistory() - 请空历史栈
+
+
+
+	
+	
+			 
+		

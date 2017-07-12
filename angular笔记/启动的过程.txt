@@ -1,0 +1,66 @@
+启动过程
+	用执行函数的形式让整个代码在加载完成后立即执行
+		在window上暴露唯一一个全局对象L250
+	检查是不是多次导入angular window.angular.bootstrap 
+		通过检查指定的元素上是否已经纯在injector进行判断  检测过程和实例
+		也就是angular的三种启动方式
+		1、ng-app="mymodel"
+			var muModel = angular.module("mymodel",[]);
+			myModel.controller('MyCtrl',['$scope',
+				$scope.gameName="qwe";
+			]);		2、手动启动(html没有ngapp)
+			var muModel = angular.module("mymodel",[]);
+			myModel.controller('MyCtrl',['$scope',
+				$scope.gameName="qwe";
+			]);
+			
+			angular.element(document).ready(function(){
+				angular.bootstrap(document,['MyModule']);
+			})
+		3、其实界面上可以有多个ng-app，只要不嵌套，可以启动的
+			html:	
+				<div ng-app="MyModel1" id="app1">{{gameName}}</div>
+				<div ng-app="MyModel2" id="app2">{{gameName}}<div>
+			js:
+				var muModel = angular.module("mymodel",[]);
+				myModel.controller('MyCtrl',['$scope',
+					$scope.gameName="qwe";
+				]);
+				
+				
+				var muModel2 = angular.module("mymodel2",[]);
+				myMode2.controller('MyCtrl',['$scope',
+					$scope.gameName="qwe";
+				]);
+				angular.element(document).ready(function(){
+					angular.bootstrap(document,['MyModule2']);
+				})
+				
+			
+			页面上自动启动两个ng-app的时候一般来说只自动启动第一个，第二个需要手动启动,但是这种方法并不推荐使用
+	尝试绑定jQuery bingJQuery()		
+		如果发现导入了JQuery则使用导入的JQuery ;否则用Angular自己封装的JQuery
+		
+	发布ng提供的API
+		publishExternalAPI(angular); L209
+		1、工具拷贝到angular的全局对象上，
+		2、调用setupModuleLoader方法创建模块定义和加载工具（全挂在全局对象window.angular上）；
+		3、构建内置对象模块ng
+		4、创建ng内置的directive和provider
+		5、两个重要的provider：$parse and $rootScope
+	查找ng-app
+		angularInit(document,bootstrap)1383
+			是否存在ng-app
+			1.1、不存在，然后手动调用angular.bootstrap方法去启动ng
+			1.2、 存在，开始启动bootstrap(elelment ,modules,config)
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		

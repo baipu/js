@@ -1,0 +1,542 @@
+拾：模块与服务的协作：
+	服务用于在应用中封装你想重用的功能
+	模块在angularjs中有两个角色1、使用ng-app指令定义应用于html元素的应用程序的功能。2、使用模块来定义功能，比如服务指令过滤器
+	Module对象的成员
+	animation(name,factory)//支持动画特性
+	config(cakkback)//注册一个在zairu
+	
+	
+
+	
+拾壹：
+		1、访问URL
+			$location服务操作第一个#后的url的部分
+			
+			$location  服务所定义的方法：
+			absUrl()//返回当前全部的学习笔记，包括#之前的内容
+			hash()hash(target)	//获取或设置url的散列部分
+			host()返回完整的url的主机名称
+			pash()pash(target)获取或设置url的完整的urll路径
+			port()		//返回端口号
+			protocol()	//返回完整的url的协议
+			replace()		//挡在html5的浏览器被调用的时候，url的变化代替了浏览器历史纪录中的最新条条目，而不是创建一条新的纪录
+			search()search(term,params)获取或设置搜索项
+			url()url(target)获取或设置路径查询字符串和散列集
+			
+			
+			$location  服务所定义的事件：
+			$locationChangeState URL被改变前触发，你可以在event对象中调用preventDefault方法来组织URL改变
+			$locationChangeSuccess	URL被改变后触发 
+			
+			
+			$anchorScroll服务非同寻常，因为你并非一定要使用服务对象，你仅仅需要声明以来，然后就会监听$location.hash的值
+		2、异常处理：
+			$exceptionHandler服务仅处理未捕获的异常，你可以用javaScriptde try。。catch来捕获异常，将不被服务处理
+			eg:
+			 $scope.throwEx = function () {
+					try {
+						throw new Error("Triggered Exception");
+					} catch (ex) {
+						$exceptionHandler(ex.message, "Button Click");
+					}
+				}
+			$sce 
+			$sanitize
+			
+			
+			
+	二、使用angularJs表达式和指令：
+		$compile	将包含绑定和指令的html片段转换为被调用的函数生成的内容
+		$interpolate	将包含内联绑定的字符串转换为能被调用的函数生成内容
+		$parse 将angularJs表达式转换为能被调用 的函数生成内容
+		1、转换表达式为函数
+			$parse服务传入angular的表达式，转为函数，可用该函数求得使用作用域对象的表达式的值
+			注意其本身不计算表达式		P480
+			
+		2、插入字符串
+			$interpolate和他的提供其$interpolateProvider，用于配置angularjs执行内插的方式
+				注意，他里边可以有包含表达式的字符串
+			
+			上边两者的区别：
+				1、$interpolate服务能操作包含非Angular内容与内敛绑定混合的字符串。实际上，{{和}}字符表示内敛绑定成为内插字符串
+				2、你无法提供作用域和本地数据给$interpolate服务创建的内插函数。所以你必须确保你的表达式所需的数字被包含在你传入内插函数的对象中
+			配置内插
+			$interpolate提供器定义的方法：
+			startSymbol(符号)//替换其实符号{{是默认de
+			ebdSymbol(符号)//替换结束符号}}
+		3、编译内容
+			$compile处理包含绑定与表达式的HTML片段，相当于$interpolate	$parse 函数，但是不支持指令
+拾贰：Ajax 和promises
+	一、产生ajax请求
+		$http	被一部执行标准的http请求。
+		
+		在angularjs程序中庸ajax的而不是在jquert中使用ajax的一个差异就是：数据应用到作用域中的时候，自动刷新了他的绑定，应用程序中跟新了html元素
+					 angular.module("exampleApp", [])
+					.controller("defaultCtrl", function ($scope, $http) {
+						$scope.loadData = function () {
+							$http.get("productData.json").success(function (data) {
+								$scope.products = data;
+							});
+						}
+					});							
+		1、产生ajax请求
+			get(url,config)为指定url执行get请求
+			post(url,data,config)执行post请求提交制定数据
+			delete(url,config)
+			put(url,data,config)
+			head(url,config)
+			jsonp(url,config)执行get请求获取javascript代码片段然后执行该代码，jsonp代表json和填充（json with padding）	是种围绕过浏览器对于javascript代码能带入的限制的工作方式，
+			
+			另一个残生ajax是将$http服务对象当作函数并传入配置对象
+			
+			get和post之间的选择
+				经验法则是	 get请求应该被用于所有只读的信息检索，post请求用于任何改变程序状态的操作
+		2、接受ajax响应
+			success(fn)
+			error(fn)
+			then(fn,fn)
+				1>>>了解更多的响应细节
+					data	请求中返回数据
+					status	返回由服务器返回的http状态码
+					headers	返回可被用于获取名为头部的函数
+					config	用于产生请求配置对象
+				2>>>处理其他数据类型
+				
+				$http方法的属性
+				data    设置发送到服务器的数据。如果你设置了该对象，angularJs会将他序列化成json格式
+				headers 常用与设置之请求头部，将头部设置为与你想添加到请求头部与之相一致的名称和值的属性对象
+				method   设置请求所使用的http的方法
+				params     长用于设置url的属性，将属性设置为与你想要包含的属性相一致的名称和值的属性对象
+				timeout 请求过期前的毫秒数
+				transformRequest    请求发送到服务器前操作他
+				transformResponse 请求发送到服务器后操作他
+				url      为请求设置url
+				withCredentials        当为true的时候底层对浏览器请求对象上的withCredentials选项是可用的，他包括在请求中验证cookies（第八章有用到）
+				csrfHeaderNamexsrfCookieName     用来应对跨站点请求为找可悲服务器查询的许可证的
+	二、使用承诺
+		两个对象：promise deferred 对象
+		可以将承诺当成事件的特殊类型，deferred对象用于发送事件，他是通过一些任务或活动的结果是promise对象
+		承诺代表在未来即将发生的任何事情
+		$q服务定义的方法
+		all(promises)   当制定的数组所有承诺被解决或其中任一被拒绝时返回承诺
+		defer()  创建defered对象
+		reject(reason) 返回始终被拒绝的承诺
+		when(value)    在总能被解决的承诺中封装的一个值（指定值作为结果）
+
+		获取和使用Defered对象
+		resolve(result)    	带有指定值得延迟活动完成的信号
+		rejec(reason)      	延迟活动失败了或由于特定原因将不被完成的信号
+		notify(result)      提供来自延迟活动的临时结果
+		promise     		返回接收其他方法型号的promise对象
+		
+		promise对象定义的方法
+		then(success,error,notify)分别调用resolve reject  notify方法
+		catch(error)
+		finally(in)
+		eg:
+		 angular.module("exampleApp", [])
+        .directive("promiseWorker", function($q) {
+            var deferred = $q.defer();				//第一步：利用$q生成deferred对象
+            return {
+                link: function(scope, element, attrs) {
+                    element.find("button").on("click", function (event) {
+                        var buttonText = event.target.innerText;
+                        if (buttonText == "Abort") {			//如果是abort对象的话，就调用reject，延迟活动失败了
+                            deferred.reject("Aborted");
+                        } else {
+                            deferred.resolve(buttonText);		//带有指定值的延迟活动完成信号
+                        }
+                    });
+                },
+                controller: function ($scope, $element, $attrs) {
+                    this.promise = deferred.promise;			//这个时候使deferred的promise的属性暴露出来，让其他地方法可以调用
+                }
+            }
+        })
+        .directive("promiseObserver", function() {
+            return {
+                require: "^promiseWorker",
+                link: function (scope, element, attrs, ctrl) {
+                    ctrl.promise.then(function (result) {		//ctrl调用依赖作用域的东西
+					//then的两个参数就是为成功的函数和失败的函数
+                        element.text(result);
+                    }, function (reason) {						//第二个参数是失败后的参数
+                        element.text("Fail (" + reason + ")");
+                    });
+                }
+            }
+        })
+        .controller("defaultCtrl", function ($scope) {		
+			
+        });
+		
+		注意：promise对象不定义之前ajax中使用的succeed和error 方法 添加这些简单方法只是为了易于使用$http服务
+
+		承诺与事件的差别
+			1、用一次就扔，一旦设置结果不变，这个比较重要，它使承诺适于发出制定活动的结果信号，换而言之，成功诺诺更明确，因为发出单一活动的结果作为信号
+
+			2、发出结果和产生的信号，发生某个时间时候，时间允许你发送单个的。承诺能以同样的方式 被使用，但是当没有结果时候，他们也可以用来发信号
+			
+			串联结果：sd <dsf></dsf>
+				 ctrl.promise
+                    .then(function (result) {
+                        return "Success (" + result + ")";
+                    }).then(function(result) {
+                        element.text(result);
+                    });
+拾叁：路由：
+					
+	一：视图选择
+		ngRoute模块包括	ng-view 他显示路由制定的是图文件的内容
+		eg:
+		<div class="panel panel-primary">
+			<h3 class="panel-heading">Products</h3>
+			<div ng-view></div>
+		</div>
+
+		当$location.path返回的值改变，$route服务通过他的提供器拿到被定义的路由的值，并将元素的内容改成ng-view指令所应用的。
+	二：接通代码和标记
+
+							.config(function ($routeProvider, $locationProvider) {
+							//h5模式启动
+								$locationProvider.html5Mode(true);
+
+								$routeProvider.when("/edit/:id", {
+									templateUrl: "/editorView.html",
+									controller: "editCtrl"
+								});
+
+								$routeProvider.when("/create", {
+									templateUrl: "/editorView.html",
+									controller: "editCtrl"
+								});
+
+								$routeProvider.otherwise({
+									templateUrl: "/tableView.html",
+									controller: "tableCtrl",
+									resolve: {
+										data: function (productsResource) {
+											return productsResource.query();
+										}
+									}
+								});
+							})
+
+		跳转方式1、
+		添加了$location服务的依赖，改变了dislayMode值得调用替换为与之等效的调用$location.path方法。
+
+		$scope.createProduct = function (product) {
+			new productsResource(product).$create().then(function (newProduct) {
+				$scope.data.products.push(newProduct);
+				$location.path("/list");//关键是这里的跳转方式
+			});
+		}
+		跳转方式2、
+		<a href="create" class="btn btn-primary">New</a>
+		注意：这是基于html5浏览器的history api管理器的html5的魔术
+	三：路由参数
+
+				 $routeProvider.otherwise({
+					templateUrl: "/tableView.html",
+					controller: "tableCtrl",
+					resolve: {
+						data: function (productsResource) {
+							return productsResource.query();
+						}
+					}
+				});
+
+
+			  $routeProvider.when("/edit/:id", {
+					templateUrl: "/editorView.html",
+					controller: "editCtrl"
+					});
+
+			$routeProvider.when("/edit/:id"，{}
+		对于url，"/edit/:id"包括了一个保守的路由参数，变量用冒号：和名字表示。路由会匹配/edit/123这样的路径，将123传给id。<a href="/edit/{{item.id}}" class="btn btn-xs btn-primary">Edit</a>这也是一个应用的例子。
+		你可以包括贪恋路由参数的路由url路径的范围，像这样：
+		。。。
+		$oruteProvider.when("/edit/:id/:data*",{})
+		。。。
+		这个将匹配至少有三个片段且第一个片段是edit的路径，第二个参数赋值给id，剩下的将赋值给路由参数data
+
+		一、访问路由参数：
+			$scope.$on("$routeChangeSuccess", function () {
+				if ($location.path().indexOf("/edit/") == 0) {
+					var id = $routeParams["id"];
+					for (var i = 0; i < $scope.products.length; i++){
+						if ($scope.products[i].id == id) {
+							$scope.currentProduct=$scope.products[i];
+							break;
+						}
+					}
+				}
+			});
+			1、$route服务所定义的方法和属性
+			current		返回提供当前路由信息的对象。从该属性返回的对象定义了与路由关联的控制器返回controller属性，一及提供控制器依赖的locals属性。由local属性返回的集合也包括$scope和$template属性，返回控制器和是图内容为作用域
+			reload() 	重载视图无论url是否改变
+			routes		返回通过$routeProvider定义的路由集合
+			2、$router服务定义的事件
+			$routeChangeStart	路由改变前触发
+			$routeChangeSuccess	路由改变后触发
+			$routeUpdate		路由刷新时候触发，绑定在reloadOnSearch配置属性上
+			$rougteChangeError	如果路由不能改变触发
+
+			3、路由获取参数
+			  var id = $routeParams["id"];
+			注意：本例中假设路由参数的值是正确格式，并于数据数组中的对象的id一致，实际项目要小心，验证接受的信息
+
+
+		二、配置路由
+			templateUrl配置属性	
+			路由配置项
+			*controller	指定路由显示的是图关联的控制器的名称
+			controllerAs	制定控制器别名
+			template	制定视图内容
+			templateUrl 	指定路由所匹配显示视图文件的URL
+			*resolve		制定一组控制器的依赖
+			redirectTo	制定当路由匹配时浏览器应重定向到的路径。可以为字符串或者是函数
+			reloadOnSearch	默认为true时，仅当$location的search和hssh方法改变返回值时，路由重载
+			caseInsensitveMatch	默认为true时，路由匹配不再大小写敏感（例如：/edit和/Edit被当作相同的）
+
+			1、使用控制器和路由
+			$routeProvider.when("/edit/:id", {
+				templateUrl: "/editorView.html",
+				controller: "editCtrl"
+			});
+			controller配置项允许你为视图制定一个已经被Module.controller方法注册的控制器，其效果是分离出了控制器逻辑，每个视图独有的
+
+			新的editCtrl将在每次deitorView.html视图显示时候创建，以为这窝不需要使用$router服务时间掌握是图合适改变。我可以值关注我的控制器函数是否被执行。
+			2、向路由添加依赖
+			resolve配置属性允许你指定将被注入controller属性指定的控制器的依赖。那些依赖可以是服务，但是resolve属性更多用于初始化的视图所必须执行的工作。这是因为你可以将承诺对象作为依赖返回，然后路由不实现控制器，直到他被解决
+			$routeProvider.otherwise({
+				templateUrl: "/tableView.html",
+				controller: "tableCtrl",
+				resolve: {
+					data: function (productsResource) {
+						return productsResource.query();
+					}
+				}
+			});
+			如上，路由应该实现的控制器tableCtrl,我还是用了resolve属性创建了以来data，data属性设为了在tableCtrl控制器被执行前的函数，结果会作为参数data传入
+
+拾肆、动画和触摸服务
+	一、动画元素
+		$animate服务：元素的添加移除移动的时候
+		需要ngAnimate模块
+
+		支持动画的内置指令及与之相关的名称
+
+		ng-repeat	enter leave move
+		ng-view		enter leave 
+		ng-include	enter leave 
+		ng-switch		enter leave
+		ng-if			enter leave
+		ng-class		enter leave
+		ng-show		enter leave
+		ng-hide		enter leave
+
+		<style type="text/css">
+			.ngFade.ng-enter { transition: 0.1s linear all;  opacity: 0; }
+			.ngFade.ng-enter-active { opacity: 1; }
+		</style>
+		注意命名：名称的第一部分ngFade常用于元素的动画和转变。为了避免与css类冲突，所以加ng的前缀
+		名称第二部分是告诉angularjs ，css样式是为了什么使用，前缀是必须的
+
+	二、触摸事件
+		ng-touch模块包含swipe服务，他被用于改善触屏设备的支持
+		<div class="well"
+			 ng-swipe-right="handleSwipe('left-to-right')"
+			 ng-swipe-left="handleSwipe('right-to-left')">
+			<h4>Swipe Here</h4>
+		</div>
+		<div>Swipe was: {{swipeType}}</div>
+拾伍：供应和注入服务	
+
+	一、注册AngularJS组件:
+		$provider服务用于注册组件，比如服务，一时的他们可以被注入来满足依赖（$injector服务做了实际注入）
+		由$provider服务定义的方法
+		constant(name,value)
+		decorator(name,value)
+		factory(name,value)
+		provider(name,value)
+		service(name,provider)
+		value(name,value)
+		不通过Module类型暴露的方法是decorator,用于为服务阻止请求 
+		.config(function($provide) {
+		   $provide.decorator("$log", function ($delegate) {
+		//参数是你想修饰的服务和必须申明依赖于$delegate的修饰函数,这是为了将原服务传给你的函数
+		//注意第一个参数必须是字符串，这里不是注入，所以需要引号
+			   $delegate.originalLog = $delegate.log;//将log重命名
+			   $delegate.log = function (message) {//然后对原函数进行修改
+					 $delegate.originalLog("Decorated: " + message);
+		//原函数就是在现有函数的基础上加上修饰的
+			}
+			   return $delegate;//返回最后的结果
+			 });
+		 })；
+
+	二、管理注入:
+		$injector赋值确定函数声明的依赖，解决依赖。
+		$injector服务定义的方法
+		annotate(fn）	获取指定函数的参数，包括那些不相应服务的
+		get(name)	获取指定服务名称的服务对象
+		has(name)	如果制定名称的服务存在，返回true
+		invoke(fn,self,locals)	调用制定函数，使用指定的值作为该函数的this并使用制定的非服务参数值
+
+
+		1、确定函数依赖：
+			将要测试的函数：
+			eg:
+				var logClick = function ($log, $exceptionHandler, message) {//依赖三个参数
+					if (counter == 0) {
+						$log.log(message);
+						counter++;
+					} else {
+						$exceptionHandler("Already clicked");
+					}
+				}
+			第获取函数本身的依赖集:
+			使用$injector.annotate方法来做
+			eg：
+				 $scope.handleClick = function () {
+					// annotate方法的参数是你想分析的函数，结果我写入控制台的函数参数数组
+					var deps = $injector.annotate(logClick);
+					//遍历输出
+					for (var i = 0; i < deps.length; i++) {
+						console.log("Dependency: " + deps[i]);
+					}
+				};
+			结果如下
+					Dependency: $log
+					Dependency: $exceptionHandler
+					Dependency: message
+
+			如果上述例子中for循环内改为：
+					for (var i = 0; i < deps.length; i++) {
+						if ($injector.has(deps[i])) {
+							console.log("Dependency: " + deps[i]);
+						}
+					}
+
+			has函数能够分辨参数是不是服务依赖，如果是依赖的话返回true所以结果为：
+			Dependency: $log
+			Dependency: $exceptionHandler
+		2、获得服务实例：	
+			通过$injector.get方法获得我需要的服务对象，接受服务名称，并返回服务对象
+			var args = [];
+			for (var i = 0; i < deps.length; i++) {
+				if ($injector.has(deps[i])) {
+					args.push($injector.get(deps[i]));
+				} else if (deps[i] == "message") {
+					args.push("Button Clicked");
+				}
+			}
+			logClick.apply(null, args);
+			这里添加了我需要的参数数组来执行函数，将服务和message参数的值结合，然后使用javascript方法apply让函数可使用器参数数组被调用
+			apply的方法：第一个参数将在函数执行时候被赋值给this对象，第二个参数是将传入函数的参数数组
+			
+		3、简化调用过程：	
+			$injector.invoke方法将专注找到服务以及管理我需要为其提供的其他的一些值eg:
+					$scope.handleClick = function () {
+						var localVars = { message: "Button Clicked" };
+						$injector.invoke(logClick, null, localVars);
+					};
+			这将是Button Clicked 赋值给参数message，然后利用invoke函数将值注入logClick
+		4、从根元素中获取$injector服务
+			$rootElement服务提供访问应用了ng-app指令html元素的方法，并且他是angular应用程序的根。$rootElement服务作为jqLite对象表示，可以使用jqLite定为元素或使用jqLite方法修改dom。$rootElement有个额外的方法，injector，返回$injector服务对象。
+				.controller("defaultCtrl", function ($scope,$rootElement) {
+					var counter = 0;
+					var logClick = function ($log, $exceptionHandler, message) {
+						if (counter == 0) {
+							$log.log(message);
+							counter++;
+						} else {
+							$exceptionHandler("Already clicked");
+						}
+					}
+					$scope.handleClick = function () {
+						var localVars = { message: "Button Clicked" };
+						$rootElement.injector().invoke(logClick, null, localVars);
+					};
+				});						
+拾伍：单元测试
+	一、准备示例项目：
+		1、创建测试配置
+		1>>安装Karma测试运行器：karma init karma.config.js
+		2>>相关文件夹下输入karma init karma.config.js
+	二、使用Karma 和jasmine	
+			
+			describe("First Test", function () {//分组若干相关测试
+				// Arrange (set up a scenario)
+				var counter;
+				beforeEach(function () {//每次测试前执行的函数
+					counter = 0;
+				});
+				it("increments value", function () {//执行函数以形成测试
+					// Act (attempt the operation)
+					counter++;
+					// Assert (verify the result)
+					expect(counter).toEqual(1);
+				})
+				it("decrements value", function () {//执行函数以形成测试
+					// Act (attempt the operation)
+					counter--;
+					// Assert (verify the result)
+					expect(counter).toEqual(0);//expect/识别测试结果//toEqual比较测试的结果与期望值(测试断言阶段的另一部分）
+				})
+			});
+		用于评估测试结果的jasmine函数
+		expect(x).toEqual(val)			断言值相等
+		expect(x).toBe(obj)				断言同一个对象
+		expect(x).toMatch(regexp)		断言x匹配正则表达式
+		expect(x).toBeDefined()			断言x已经定义
+		expect(x).toBeUndefined()		断言没有定义
+		expect(x).toBeNull()			断言x是null
+		expect(x).toBeTruthy()			断言x是true
+		expect(x).toBeFalsy()			断言x是false
+		expect(x).toContain(y)			断言x是包含y的字符串
+		expect(x).toBeGreaterThan(y)	断言x>y
+		相反项目可以	expect(x).not.toEqual(val)
+			
+		运行测试:
+		karma start karma.config.js
+		
+	三、理解仿照对象
+		仿照是创建在应用程序中提换关键组建的对象的过程，以此可以进行有效的单元测试。需要测试使用$http服务发出的ajax请求的控制器	的行为。该行为以来许多其他组件和系统，失败时候你无法知晓问题是否有你视图测试的控制器行为导致的还是由于无关的测试
+		测试毅力啊的组建替换为仿照对象（mock object ) 这些对象实现所需的组建的api但生成伪造的可预见的结果。
+		
+		ngMock模块包含一组仿照对象，用于替换AngularJS组件
+		angular.mock	用于创建模块并解决依赖
+		$exceptionHandler	仿照$exceptionHandler服务实现，接受异常
+		$	
+		$log
+		$timeout
+		
+		
+										angular.mock对象定义的方法
+		
+		module(name)		载入制定模块
+		inject(fn)			解决依赖，注入函数
+		dump(pbject)		序列化angularJs对象
+		
+										为单元测试准备的附加方法和服务
+		
+		$rootScope.new()		创建新的作用域
+		$scontroller(name)		创建制定控制器的实例
+		$filter(name)			创建制定过滤器的实例
+		
+	四、测试控制器
+		准备：
+		需要两个东西执行测试：控制器的实例和向他的工厂函数传入作用域					
+		第一部：载入模板（模板包含控制器）
+		beforeEach(angular.mock.module("exampleApp"));
+		注意：这里的 angualr.mock.module前缀不是必要的可以只用module("exampleApp")
+			1>>解决依赖。
+				beforeEach(angular.mock.inject(function ($controller, $rootScope) {
+					mockScope = $rootScope.$new();
+					controller = $controller("defaultCtrl", { 
+						$scope: mockScope
+					});
+				}));
+				传入到inject方法的函数声明依赖于$controller 和 $rootScope服务。一般来说，inject方法用于准备单元测试，而且将在jasmine的	it方法调用	

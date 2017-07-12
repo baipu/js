@@ -1,0 +1,84 @@
+开发模式：
+	原生/Native ：
+		使用原生 SDK 开发App。优点不用说，当你有足够的资源，这是最理想的方式；缺点是对不同的平台要分别开发， 学习成本高, 开发 成本高、 开发 周期长、 不易 于	web  开发 人员 和 企业 建站 公司 转型
+	原生脚本/NativeScript ：
+		将原生 API 封装成 JavaScript 接口，这有点像前端的 nodejs。	NativeScript 方式  与原生相比性能损失不大（据称只有 10%左右） ，优点是开发语言统一使用 JavaScript， 缺点是  要针对不同的平台分别开发。
+	原生+web/ Hybrid ：
+		使用原生技术开发，部分页面调用 web。优点是 比纯原生开发周期短 ，  页面 更新 方便，如支付宝，还有很多 app  的 详情 页面。缺点： 需要 原生和 和 web  配合 。
+	混合/Hybrid ：
+		使用 web 技术开发 App，使用 Cordova/PhoneGap 之类进行打包封装。优	点是 采用标准的 web  技术开发， 避免了不同平台原生开发体系的学习 ， 学习成本低 ， 上手	快、 效率高, 次 开发  微信 wap app  全部 搞定；缺点是 app 在 在 android  平台性能上有一些	损失
+
+1、css布局
+	bar定位
+			样式.bar将元素声明为屏幕上绝对定位的块状区域，具有固定的高度（44px）
+		.bar	
+			同级元素：
+				位置.bar-header  .bar-subheader .bar-footer .bar-subfooter
+				配色
+					.bar-stable .bar-positive .bar-calm .bar-balanced .bar-energized .bar-assertive .bar-royal .bar-dark
+			下级样式：
+				标题：.title 按钮.button 工具栏.button-bar
+			内嵌input
+				1. 在条块元素上应用 .item-input-inset 样式
+				2. 将 input 包裹在应用 .item-input-wrapper 样式的元素内
+		内容：.content .scroller-content
+			.content相对定位
+			.scroller-content绝对定位
+				进一步确定范围：
+					.has-header .has-subheader .has-footer .has-subfooter .has-tabs-top .has-tabs 
+		
+	ionic样式
+		1>九种颜色样式
+		边框：
+		.light-border .stable-border .positive-border .clam-border .balanced-border .energized-border .assetive-border .royal-border .dark-border
+		背景：.light-bg
+		字体：.light
+		2>图标
+		ionic 使用ionicons 图标样式库。ionicons 采用了 TrueType 字体实现图标样式，有超过500 个图标可供选择。
+		.icon - 将元素声明为图标
+		.ion-{icon-name} - 声明要使用的具体图标
+		可以在任何元素中插入图标，使用元素的  font-size样式指定图标的大小
+	ionic 组件列表
+		.list定义容器.item定义成员
+		外观定制主要集中到.item上，所以
+		.list样式：	
+			同级样式	边框：.list-borderless
+						边框缩进：.list-inset	.card
+						阴影。card
+		.item同级样式
+			边框：.item-bordless
+			配色：.item-{{color}}
+			分组：.item-divider
+			按钮位置：.item-button-left/right
+			图标位置：.item-icon-left/right
+			头像位置：.item-avatar-left/right
+			缩略图位置：.item-thumbnail-right/left
+			图像位置：.item-image
+		.item下级样式：
+			文本：h1/h2/h3/h4/h5/h6/p
+			徽章：.barget图标.icon图像.img按钮.button
+			
+			要插入图标，需要满足两个条件：
+				1.在.item元素上声明图标位置。图标可以位于列表的左侧或右侧,分别使用.item-icon-left和.item-icon-right 声明
+				2. 在 .item 元素内插入图标 list-inset。
+			在ionic中，头像被设置为40x40固定大小。和插入图标类似，向 .item 中插入头像需要满足两个条件：
+				1.在.item元素上声明头像位置。头像可以位于列表的左侧或右侧，分别使用.item-avatar-left和.item-avatar-right 声明
+				2.在.item元素内使用img标签插入头像。
+			在ionic中缩略图被定义为80px大小，比头像大，适合新闻图片。和插入头像类似，向.item中插入缩略图需要满足两个条件：
+				1.在.item元素上声明缩略图位置。缩略图可以位于列表左侧或右侧，分别使用.item-thumbnail-left和.item-thumbnail-right 声明
+				2. 在 .item 元素内使用 img 标签插入头像。
+			嵌入大图 item-image
+			
+			 <div class="list">
+				<div class="item">课程</div>
+				<div class="item">MegaMan <i class="badge positive-bg light">12</i></div>
+				<i class="item item-icon-left item-icon-right">
+					<i class="icon ion-location"></i>
+					<h2>入住城市：当前位置</h2>
+					<i class="icon ion-ios-arrow-right"></i>
+				</i>
+				<i class="item">Mike Tyson's Punch-Out</i>
+			</div>
+		
+	
+	

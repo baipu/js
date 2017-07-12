@@ -1,0 +1,104 @@
+Provider 与 Injector
+	依赖注入
+	
+	
+	ng三种注入方式
+		推断型，注入
+		标注式注入
+		内联注入
+		
+			
+				//  1、基本的注入
+		//    var myModule = angular.module("MyModule", []);
+		//    myModule.controller('MyCtrl',['$scope',function ($scope) {
+		//        $scope.ctrlFlavor="百威";
+		//    }])
+		//    2、推断型注入
+		//            var myModule = angular.module("MyModule", []);
+		//            var MyCtrl = function ($scope) {
+		//                $scope.gameName = "百威";
+		//            }
+		//            myModule.contrzhuoller('MyCtrl', MyCtrl);
+		//            缺陷：参数名称与需要的必须一模一样，所以~~如果对源码压缩的时候注入不能用了
+		//            3、标注式注入/申明式的注入
+		//                var myModule = angular.module("MyModule", []);
+		//                var MyCtrl = function (thisisMyName) {
+		//                    thisisMyName.gameName = "百威";
+		//                }
+		//                MyCtrl.$inject = ['$scope'];
+		//                myModule.controller('MyCtrl', MyCtrl);
+		//                4、内联式注入
+		var myModule = angular.module("MyModule", []);
+	
+		myModule.controller('MyCtrl', ['$scope', function ($sco12pe) {
+			$sco12pe.gameName = "大漠吃豆子"
+		}])
+			
+			
+			
+			
+		
+		
+		
+		
+		
+		
+		
+	直接使用$indector(很少用)
+	
+	Provider模式与ng实现
+	
+	策略模式 工厂模式====>让接口和实现互相分离
+	所有通过provider定以实现的都可以进行注入
+		可以用来注入的:
+		provider/factory /service / constant /value	
+		用来接收注入的：
+		Controller /direcitve filter service factory
+		
+		ng里边的注入都是通过provider 和factory实现的
+		provider的使用：
+			注意：必须有$get的存在
+			var mymodel = angular.module("myModel",[]);
+			mymodel.provider("helloAngular",function () {
+				return {
+					$get:function () {
+						var name="baipu";
+						function getName() {
+							return name;
+						}
+						return {
+							getName:getName
+						}
+					}
+				}
+			});	
+		factory的使用：
+			比较简单，直接function里边返回对象就好了
+			var mymodel = angular.module("myModel", []);
+			mymodel.factory("helloAngular", function () {
+				var name = "baipu";
+				function getName() {
+					return name;
+				}
+				return {
+					getName: getName
+				}
+			});
+		Service的使用：
+			最简单，不需要返回对象，只需要返回function就好了
+			 var mymodel = angular.module("myModel", []);
+			mymodel.service("helloAngular", function () {
+				this.name = "baipu";
+				this.getName=function ()
+				{
+					return this.name;
+				}
+			});
+		provider/factory /service / constant /value	
+			provider是基础，其余的都是调用provider函数实现的，知识参数不同，但是从左到右，灵活性越来越差
+			
+	
+	ng内置的privider($ControllerProvider L7357)
+		
+
+

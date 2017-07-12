@@ -1,0 +1,96 @@
+Service
+
+1、$http
+		  $http({
+			  method:'GET',
+			  url:'data.json'
+		  }).success(function (data,status,headers,config) {
+			  console.log("success....");
+			  console.log(data);
+			  $scope.users=data;
+		  }).error(function (data,status,headers,config) {
+			  console.log("error...");
+		  });
+	
+		
+	
+	
+2、创建自己的service
+	service的特性
+	单例的	
+	由$indector负责市里话的
+	Servicezai 整个应用的生命周期存在，用来共享数据
+	需要使用依赖注入的机制注入Service
+	在自定义的Service需要写在内置的Service后边
+	内置的Service的命名以$开头，自定义的应当避免	
+	
+	<div ng-controller="bpcrl">
+	</div>
+	<script>
+	//这里设置自己的service
+		var myService = angular.module("MyServiceApp", []);
+		myService.factory('bpService', [ function () {
+			var method01 = function () {
+				console.log(123);
+			}
+			return {
+				theMethod:method01
+			}
+		}]);
+		myService.factory('bpService2', [ function () {
+			var method01 = function () {
+				console.log(1234);
+			}
+			return {
+				theMethod:method01
+			}
+		}]);
+		//此处为调用  【】前边的值是用来注入function的
+		myService.controller('bpcrl',['$scope', 'bpService2',function ($scope, bpService){
+			bpService.theMethod();
+		}])
+	</script>
+3、Service Provider Factory 本质上来看都是Provider
+	Provider模式   是策略模式+工厂模式的混合体  其实一种策略模式，提供者模式
+	
+4、$filter 服务
+	$filter
+	用来进行格式化数据的专用服务
+	有九个内置的filter
+		current date filter limitTo lowercase number orderBy uppercase 
+	可以嵌套使用
+	可以值传递
+	可以自定义自己的filter
+		var myService = angular.module("MyServiceApp", []);
+		myService.filter('filter1', function () {
+			return function (item) {
+				return item + 'o(^▽^)o';
+			}
+		})
+	
+
+	
+	
+ 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	service factory provider 本质上都是provider
+	使用$filter服务
+	其他内置的service介绍
+	
+	

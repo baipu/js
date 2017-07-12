@@ -1,0 +1,322 @@
+四大核心
+	>mvc
+	>模块化和依赖注入
+	>双向数据绑定
+	>指令
+	
+
+	》	hello指令
+		
+		var myModule = angular.module("MyModule",[]);
+		myModule.directive("hello",function(){
+			return {
+				restrict:'AEMC',
+				template:'<div> Hi everyOne</div>',
+				replace:true
+			}
+			
+		});
+		
+		基本的四个方法
+			<hello><div>hello21</div></hello>      <!--1E-->
+			{{123}}
+			<div hello></div>     <!--2A-->
+			<div class="hello"></div>    <!--3C-->
+			<!-- directive:hello -->   <!--主意前后的空格-->
+			<div></div>         <!--4M-->
+		
+		默认是Atribute这个A 还有Attribute 也就是说<my-menu title=""><my-menu>这两个比较常用
+			注意：templageUrl可以写成独立的文档
+		是用来进行hello嵌套的时候
+			transclude:true,
+			template:"<div>Hello everyone!!!<div ng-transclude></div></div>"
+		
+	了解即可		
+		
+		compile 与  link
+			加载阶段  加载angular.js 找打ng-app指令，确定应用的边界
+			编译阶段	遍历DOM找到所有的指令
+						根据指令代码中的template replace transclude 转换dom结构
+						如果存在compile的函数，调用
+			链接阶段	对angular一般来说在这里进行操作dom函数
+						绑定事件监听		操作dom
+						绑定作用域
+			compile返回preLine和postLink的函数，而Link只返回postLink函数
+			修改DOM结构的时候在postLinkh中做这件事
+			大多数时候只编写link
+			
+	代码：
+		html:
+		<!DOCTYPE html>
+		<html ng-app="MyModel">
+		<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+			<!--<script type="text/javascript" src="../lib/jquery-1.6.4.js"></script>-->
+			<!--<script type="text/javascript" src="../lib/angular.js"></script>-->
+			<script type="text/javascript" src="../angular-1.5.7/angular.js"></script>
+			<script type="text/javascript" src="helloAngular.js"></script>
+
+		</head>
+		<body>
+		<hello><div>hello21</div></hello>      <!--1E-->
+		{{123}}
+		<div hello></div>     <!--2A-->
+		<div class="hello"></div>    <!--3C-->
+		<!-- directive:hello -->   <!--主意前后的空格-->
+		<div></div>         <!--4M-->
+		</body>
+		</html>
+
+
+
+
+js:
+	var myModel = angular.module("MyModel",[]);
+		myModel.directive("hello",function(){
+			return {
+				restrict:'AEMC',
+				template: '<div> Hi everyOne</div>',
+				replace: true,
+				//解释transclude这个东西
+				//他是用来进行hello嵌套的时候
+				// transclude:true,
+				// template:"<div>Hello everyone!!!<div ng-transclude></div></div>"
+                // compile:function () {
+				// 	//这儿在编译阶段执行，但是一般不用
+				// }
+				link:function () {
+					//angular一般来说在这里进行操作dom函数
+					// 绑定事件监听		操作dom
+					// 绑定作用域
+				}
+
+
+			}
+		});
+		
+
+
+
+
+
+
+
+
+
+
+
+	》	指令，控制器的交互
+	
+	》	独立scope  
+		<hello></hello>
+		<hello></hello>
+		<hello></hello>
+		<hello></hello>
+		这种情况下使各个标签相互独立，不至于出现一个变化，全部变化
+		所以在标签里填一句 scope:[],这样就各个独立了
+		return {
+            restrict: "AE",
+//            scope:{},
+            template:"<div><input type='text' ng-model='userName'>{{userName}} </div>",
+            replace:true
+        }
+		
+
+	》scope的绑定策略
+		@绑定	
+			把当前属性作为字符串传递
+			
+			html:	 <div ng-controller="MyCtrl">
+						<drink flavor="{{ctrlFlavor}}"></drink>
+					</div>
+			js：	myModule.controller('MyCtrl',['$scope',function ($scope) {
+						$scope.ctrlFlavor="百威";
+					}])
+					myModule.directive("drink", function () {
+						return {
+							restrict: "AE",
+						   scope:{
+							   flavor:"@"
+						   },
+							template:"<div> {{flavor}} </div>"
+				//            ,            //这里的link是最原始的方法注入，加上scope:{flavor:"@"}这样该属性就可以传值了
+											//注意！！！！！！！ @绑定传递的是一个字符串，不是一个对象
+											
+				//            link:function (scope,elemen,attrs) {
+				//                scope.flavor=attrs.flavor;
+				//            }fang
+						}
+					});
+								
+			
+		=绑定	
+			与父scope中的属性双向绑定
+			html：
+				 directive:
+				<br>
+				<drink flavor="ctrlFlavor"></drink>	
+			
+			js:
+				var myModule = angular.module("MyModule", []);
+				myModule.controller('MyCtrl',['$scope',function ($scope) {
+					$scope.ctrlFlavor="百威";
+				}])
+				myModule.directive("drink", function () {
+					return {
+						restrict: "AE",
+					   scope:{
+						   flavor:"="
+					   },
+						template:' <input type="text" ng-model="flavor">'
+			//            ,
+			//            link:function (scope,elemen,attrs) {
+			//                scope.flavor=attrs.flavor;
+			//            }
+					}
+				});
+			
+			
+			
+			解析：此处 相当于在scope里定义了=这个，然后drink解析成<input type="text" ng-model="flavor">
+			
+			在原来的html中，flavor="ctrlFlavor" 这里的“=”相当于在scope里定义了，然后就会在scope里边找ctrlFlavor，找到后，赋值给flavor,也就是解析出来个ng-model
+			
+			
+		& 绑定
+			传递一个来自父scope的函数，稍后调用
+			html：	
+				<greeting greet="sayHello(name)"></greeting>
+				<greeting greet="sayHello(name)"></greeting>
+				<greeting greet="sayHello(name)"></greeting>
+			js:
+			myModule.controller('MyCtrl',['$scope',function ($scope) {
+				$scope.sayHello=function(name){                       
+					alert("hello,"+name);                             
+				};                                                    
+			}])   
+
+
+			
+			 return {                                                                          
+																							   
+				 restrict: "AE",                                                               
+				scope:{                                                                        
+					greet:"&"                                                                  
+		                                                     
+				 template:' <input type="text" ng-model="userName">'+                          
+						 '<button  ng-click="greet({name:userName})" >Greeting</button><br>'   
+			 }                                                                                 			
+			
+			解析：此处& 修饰的都是《greeting》里边的属性值，然后直接给greet赋值为父类的函数，然后函数在template中调用这个属性，即为调用这个函数。
+			
+	》内置指令
+		共有63个指令
+		form
+			1、可以嵌套
+			2、自动校验 防止重复提交
+			3、对input元素的type进行拓展共有以下十个类型
+				text. number ,url ,email , radio checkbox ,hidden ,button , submit , reset ,
+			4、内置了四种css
+				ng-valid 校验通过	ng-invalid 校验不通过 	ng-pristine 	ng-dirty
+			5、	内置校验器：require minlength maxlength
+			  
+			  <input type="submit" ng-disabled="myForm.$invalid"/>
+	》expander		
+			
+			
+			
+			
+			
+			
+			
+			
+			
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+
+
+
+
+
+
+
+
+
+
+
+		
+			
+			
+			
+			
+			
+			
+			
+			
+			、
+			
+			
+			
+			
+			
+
+			
+			
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	1、内置的指令
+		共63个
+		
+		

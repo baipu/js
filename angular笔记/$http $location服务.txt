@@ -1,0 +1,65 @@
+$http $location服务
+1、$http的三个方法
+	1>	$http.get(url,{params:{id:'5'}}) .success(function(response) {
+				$scope.names = response;
+		}).error(function(data){
+			//错误代码
+		});
+	2>$http.post
+		var postData={text:'这是 post 的内容'};
+		var config={params:{id:'5'}};
+		$http.post((url,postData,config) .success(function(response) {
+			scope.names = response;
+		}).error(function(data){
+			//错误代码
+		});
+	3>$http Jsonp  实例：
+		var myUrl = "http://phonegat100.com/appapi.php?a=getPortalList&catid=20&page=1&callback=JSON_CALLBACK";
+        return $http.jsonp(myUrl,{cache:true});
+2、$location $anchorScroll 服务
+	$location服务解析地址栏中的URL（基于window.location），让你在应用代码中能获取到。改变地址栏中的 URL 会反应$location 服务中，反之亦然。
+	$location作用
+		1、暴露当前的url这样就能 监听url改变url
+		2、当以下情况出现时同步url
+			改变地址栏中的	点击后退按钮	点击链接
+		3、一系列对象获取url的具体内容
+			（protocol, host, port, path, search,hash）.formatDate
+	$location方法
+		absUrl( )：只读；根据在 RFC 3986 中指定的规则，返回 url，带有所有的片段。
+		hash()：读、写；当带有参数时，返回哈希碎片；当在带有参数的情况下，改变哈希碎片时，返回$location。
+		host( )：只读；返回 url 中的主机路径。
+		path()：读、写；当没有任何参数时，返回当前url的路径；当带有参数时，改变路径，并返回$location。 （返回的路径永远会带有/）
+		port( )：只读；返回当前路径的端口号。
+		protocol( )：只读；返回当前 url 的协议。
+		replace()：如果被调用，就会用改变后的URL直接替换浏览器中的历史记录，而不是在历史记录中新建一条信息，这样可以阻止『后退』 。
+		search( )： 读、 写； 当不带参数调用的时候， 以对象形式返回当前url 的搜索部分。
+		url( )：读、写；当不带参数时，返回 url；当带有参数时，返回$location。
+ 3、 $cacheFactory  服务
+	缓存到本地的服务
+	 app.controller('Aaa', ['$scope', '$cacheFactory', '$log', function ($scope, $cacheFactory, $log) {
+        $log.error('hello');
+        var cache = $cacheFactory('myCache');
+        cache.put('name', 'hello');
+        cache.put('age', '20');
+        cache.put('job', 'it');
+    }]);
+    app.controller('Bbb', ['$scope', '$cacheFactory', '$log', '$timeout',
+        function ($scope, $cacheFactory, $log, $timeout) {
+            $timeout(function () {
+                var cache = $cacheFactory.get('myCache');
+                console.log(cache.get('name'));
+
+            }, 1000);
+        }]);		
+4、$sce
+	因为AngularJS里好些地方，比如路径默认是个字符串，不会认为是路径，从而访问不到我们需要的东西，那么我们就可以通过$sce告诉angualrJS这个路径，这样是很安全滴。它有以下几种：
+
+	$sce.trustAs(type,name);
+	$sce.trustAsUrl(value);
+	$sce.trustAsHtml(value);
+	$sce.trustAsResourceUrl(value);
+	$sce.trustAsJs(value);
+			
+
+	
+	

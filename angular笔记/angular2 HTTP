@@ -1,0 +1,480 @@
+http
+===
+获取和保存数据
+
+把服务和组件改为用Angular的HTTP服务实现
+
+准备HTTP服务
+---
+HttpModule并不是Angular的核心模块。 它是Angular用来进行Web访问的一种可选方式，并通过Angular包中一个名叫@angular/http的独立附属模块发布了出来。
+
+我们要能从本应用的任何地方访问这些服务，就要把`HttpModule`添加到`AppModule`的`imports`列表中。 这里同时也是我们引导应用及其根组件`AppComponent`的地方。
+app/app.module.ts (v1)
+```
+import { NgModule }      from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule }   from '@angular/forms';
+import { HttpModule }    from '@angular/http';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent }         from './app.component';
+import { DashboardComponent }   from './dashboard.component';
+import { HeroesComponent }      from './heroes.component';
+import { HeroDetailComponent }  from './hero-detail.component';
+import { HeroService }          from './hero.service';
+@NgModule({
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpModule,
+    AppRoutingModule
+  ],
+  declarations: [
+    AppComponent,
+    DashboardComponent,
+    HeroDetailComponent,
+    HeroesComponent,
+  ],
+  providers: [ HeroService ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule { }
+```
+注意，现在HttpModule已经是根模块AppModule的imports数组的一部分了。
+
+
+模拟web API
+---
+我们建议在根模块`AppModule`的`providers`数组中注册全应用级的服务。我们要耍点小花招，让http客户端从一个Mock服务（内存**(in-memory)Web API）**中获取和保存数据。
+这个版本的app/app.module.ts就是用来实现这个小花招的
+app/app.module.ts (v2)
+```
+import { NgModule }      from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule }   from '@angular/forms';
+import { HttpModule }    from '@angular/http';
+
+import { AppRoutingModule } from './app-routing.module';
+
+// Imports for loading & configuring the in-memory web api
+** import { InMemoryWebApiModule } from 'angular-in-memory-web-api';**
+**import { InMemoryDataService }  from './in-memory-data.service';**
+
+import { AppComponent }         from './app.component';
+import { DashboardComponent }   from './dashboard.component';
+import { HeroesComponent }      from './heroes.component';
+import { HeroDetailComponent }  from './hero-detail.component';
+import { HeroService }          from './hero.service';
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpModule,
+    **InMemoryWebApiModule.forRoot(InMemoryDataService),
+            AppRoutingModule**
+  ],
+  declarations: [
+    AppComponent,
+    DashboardComponent,
+    HeroDetailComponent,
+    HeroesComponent,
+  ],
+  providers: [ HeroService ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule { }
+```
+导入InMemoryWebApiModule并将其加入到模块的imports数组。 InMemoryWebApiModule将Http客户端默认的后端服务（这是一个辅助服务，负责与远程服务器对话）替换成了内存Web API服务：
+forRoot配置方法需要InMemoryDataService类实例，用来向内存数据库填充数据：
+app/in-memory-data.service.ts
+```
+import { InMemoryDbService } from 'angular-in-memory-web-api';
+export class InMemoryDataService implements InMemoryDbService {
+  createDb() {
+    let heroes = [
+      {id: 11, name: 'Mr. Nice'},
+      {id: 12, name: 'Narco'},
+      {id: 13, name: 'Bombasto'},
+      {id: 14, name: 'Celeritas'},
+      {id: 15, name: 'Magneta'},
+      {id: 16, name: 'RubberMan'},
+      {id: 17, name: 'Dynama'},
+      {id: 18, name: 'Dr IQ'},
+      {id: 19, name: 'Magma'},
+      {id: 20, name: 'Tornado'}
+    ];
+    return {heroes};
+  }
+}
+```
+该文件代替了mock-heroes.ts文件，它现在可以安全的删除了。
+
+
+
+英雄与HTTP
+---
+我们返回一个承诺（Promise)，它用mock版的英雄列表进行解析。 它当时可能看起来显得有点过于复杂，不过我们早就预料到总有这么一天会通过一个HTTP客户端来获取英雄数据，而且我们知道，那一定是一个异步操作。
+
+这一天到来了！我们把getHeroes()换成用HTTP。
+app/hero.service.ts (updated getHeroes and new class members)
+```
+  private heroesUrl = 'app/heroes';  // URL to web api
+
+  constructor(private http: Http) { }
+
+  getHeroes(): Promise<Hero[]> {
+    return this.http.get(this.heroesUrl)
+               .toPromise()
+               .then(response => response.json().data as Hero[])
+               .catch(this.handleError);
+  }
+
+```
+导入申明
+``` 
+import { Injectable }    from '@angular/core';
+import { Headers, Http } from '@angular/http';
+
+import 'rxjs/add/operator/toPromise';
+
+import { Hero } from './hero';
+```
+
+### Http承诺(Promise)
+Angular的http.get返回一个RxJS的Observable对象。`` Observable`(可观察对象)是一个管理异步数据流的强力方式。 后面我们还会进一步学习可观察对象。
+
+现在，我们先利用toPromise操作符把Observable直接转换成Promise对象，回到已经熟悉的地盘。`.toPromise()`
+不幸的是，Angular的Observable并没有一个toPromise操作符... 没有打包在一起发布。 Angular的Observable只是一个骨架实现。
+有很多像toPromise这样的操作符，用于扩展Observable，为其添加有用的能力。 如果我们希望得到那些能力，就得自己添加那些操作符。 那很容易，只要从RxJS库中导入它们就可以了，就像这样：
+```
+import 'rxjs/add/operator/toPromise';
+```
+### 在then回调中提取出数据
+在promise的then回调中，我们调用HTTP的Reponse对象的json方法，以提取出其中的数据。有很多像toPromise这样的操作符，用于扩展Observable，为其添加有用的能力。 如果我们希望得到那些能力，就得自己添加那些操作符。 那很容易，只要从RxJS库中导入它们就可以了，就像这样：
+```
+.then(response => response.json().data as Hero[])
+```
+### 在then回调中提取出数据
+在promise的then回调中，我们调用HTTP的Reponse对象的json方法，以提取出其中的数据。
+```
+.then(response => response.json().data as Hero[])
+```
+### 错误处理
+在getHeroes()的最后，我们catch了服务器的失败信息，并把它们传给了错误处理器：
+```
+.catch(this.handleError);
+```
+这是一个关键的步骤！ 我们必须预料到http请求会失败，因为有太多我们无法控制的原因可能导致它们频繁出现各种错误。
+
+
+
+
+更新英雄详情
+---
+以前是不会丢失更新的，现在是怎么回事？ 当该应用使用mock出来的英雄列表时，修改的是一份全局共享的英雄列表，而现在改成了从服务器获取数据。 如果我们希望这些更改被持久化，我们就得把它们写回服务器。
+### 保存英雄详情
+我们先来确保对英雄名字的编辑不会丢失。先在英雄详情模板的底部添加一个保存按钮，它绑定了一个click事件，事件绑定会调用组件中一个名叫save的新方法：
+`<button (click)="save()">Save</button>`
+```
+    save(): void {
+      this.heroService.update(this.hero)
+        .then(() => this.goBack());
+    }
+```
+### hero服务的update方法
+app/hero.service.ts (update)
+```
+private headers = new Headers({'Content-Type': 'application/json'});
+
+update(hero: Hero): Promise<Hero> {
+  const url = `${this.heroesUrl}/${hero.id}`;
+  return this.http
+    .put(url, JSON.stringify(hero), {headers: this.headers})
+    .toPromise()
+    .then(() => hero)
+    .catch(this.handleError);
+}
+```
+
+添加英雄
+---
+app/heroes.component.html (add)
+```
+<div>
+  <label>Hero name:</label> <input #heroName />
+  <button (click)="add(heroName.value); heroName.value=''">
+    Add
+  </button>
+</div>
+```
+app/heroes.component.ts (add)
+```
+add(name: string): void {
+  name = name.trim();
+  if (!name) { return; }
+  this.heroService.create(name)
+    .then(hero => {
+      this.heroes.push(hero);
+      this.selectedHero = null;
+    });
+}
+```
+app/hero.service.ts (create)
+```
+create(name: string): Promise<Hero> {
+  return this.http
+    .post(this.heroesUrl, JSON.stringify({name: name}), {headers: this.headers})
+    .toPromise()
+    .then(res => res.json().data)
+    .catch(this.handleError);
+}
+```
+删除一个英雄
+---
+app/heroes.component.html (li-element)
+```
+  <li *ngFor="let hero of heroes" (click)="onSelect(hero)"
+      [class.selected]="hero === selectedHero">
+    <span class="badge">{{hero.id}}</span>
+    <span>{{hero.name}}</span>
+    <button class="delete"
+      (click)="delete(hero); $event.stopPropagation()">x</button>
+  </li>
+
+```
+除了调用组件的delete方法之外，这个delete按钮的click处理器还应该阻止click事件向上冒泡 —— 我们并不希望触发<li>的事件处理器，否则它会选中我们要删除的这位英雄。
+delete处理器的逻辑略复杂：
+app/heroes.component.ts (delete)
+```
+delete(hero: Hero): void {
+  this.heroService
+      .delete(hero.id)
+      .then(() => {
+        this.heroes = this.heroes.filter(h => h !== hero);
+        if (this.selectedHero === hero) { this.selectedHero = null; }
+      });
+}
+```
+当然，我们仍然把删除英雄的操作委托给了hero服务，不过该组件仍然负责更新显示：它从数组中移除了被删除的英雄，如果删除的是正选中的英雄，还会清空选择。
+
+app/heroes.component.css (additions)
+```
+button.delete {
+  float:right;
+  margin-top: 2px;
+  margin-right: .8em;
+  background-color: gray !important;
+  color:white;
+}
+```
+#### hero服务的delete方法
+```
+delete(id: number): Promise<void> {
+  const url = `${this.heroesUrl}/${id}`;
+  return this.http.delete(url, {headers: this.headers})
+    .toPromise()
+    .then(() => null)
+    .catch(this.handleError);
+}
+```
+
+
+
+可观察对象（Observable）
+---
+`Http`服务中的每个方法都返回一个`HTTP Response`对象的`Observable`实例。
+我们的`HeroService`中把那个`Observable`对象转换成了`Promise`（承诺），并把这个承诺返回给了调用者。 这一节，我们将学会直接返回`Observable`，并且讨论何时以及为何那样做会更好。
+### 背景
+一个可观察对象是一个事件流，我们可以用数组型操作符（函数）来处理它。
+Angular内核中提供了对可观察对象的基本支持。而我们这些开发人员可以自己从RxJS可观察对象库中引入操作符和扩展。 我们会简短的讲解下如何做。
+### 按名搜索
+我们要为《英雄指南》添加一个英雄搜索特性。 当用户在搜索框中输入一个名字时，我们将不断发起HTTP请求，以获得按名字过滤的英雄。
+我们先创建HeroSearchService服务，它会把搜索请求发送到我们服务器上的Web API。
+```
+import { Injectable }     from '@angular/core';
+import { Http, Response } from '@angular/http';
+import { Observable } from 'rxjs';
+import { Hero }           from './hero';
+@Injectable()
+export class HeroSearchService {
+  constructor(private http: Http) {}
+  search(term: string): Observable<Hero[]> {
+    return this.http
+               .get(`app/heroes/?name=${term}`)
+               .map((r: Response) => r.json().data as Hero[]);
+  }
+}
+
+```
+HeroSearchService中的http.get()调用和HeroService中的很相似，只是这次带了查询字符串。 显著的不同是：我们不再调用toPromise，而是直接返回可观察对象。
+### HeroSearchComponent
+们再创建一个新的HeroSearchComponent来调用这个新的HeroSearchService。
+
+组件模板很简单，就是一个输入框和一个显示匹配的搜索结果的列表。
+app/hero-search.component.html
+```
+<div id="search-component">
+  <h4>Hero Search</h4>
+  <input #searchBox id="search-box" (keyup)="search(searchBox.value)" />
+  <div>
+    <div *ngFor="let hero of heroes | async"
+         (click)="gotoDetail(hero)" class="search-result" >
+      {{hero.name}}
+    </div>
+  </div>
+</div>
+
+```
+app/hero-search.component.css
+```
+.search-result{
+  border-bottom: 1px solid gray;
+  border-left: 1px solid gray;
+  border-right: 1px solid gray;
+  width:195px;
+  height: 20px;
+  padding: 5px;
+  background-color: white;
+  cursor: pointer;
+}
+#search-box{
+  width: 200px;
+  height: 20px;
+}
+```
+*ngFor从该组件的heroes属性重复获取hero对象。这也没啥特别的。
+
+但是，接下来我们看到heroes属性现在是英雄列表的Observable对象，而不再只是英雄数组。 *ngFor不能用可观察对象做任何事，除非我们在它后面跟一个async pipe (AsyncPipe)。 这个async管道会订阅到这个可观察对象，并且为*ngFor生成一个英雄数组。
+app/hero-search.component.ts
+```
+import { Component, OnInit } from '@angular/core';
+import { Router }            from '@angular/router';
+import { Observable }        from 'rxjs/Observable';
+import { Subject }           from 'rxjs/Subject';
+import { HeroSearchService } from './hero-search.service';
+import { Hero } from './hero';
+@Component({
+  moduleId: module.id,
+  selector: 'hero-search',
+  templateUrl: 'hero-search.component.html',
+  styleUrls: [ 'hero-search.component.css' ],
+  providers: [HeroSearchService]
+})
+export class HeroSearchComponent implements OnInit {
+  heroes: Observable<Hero[]>;
+  private searchTerms = new Subject<string>();
+  constructor(
+    private heroSearchService: HeroSearchService,
+    private router: Router) {}
+  // Push a search term into the observable stream.
+  search(term: string): void {
+    this.searchTerms.next(term);
+  }
+  ngOnInit(): void {
+    this.heroes = this.searchTerms
+      .debounceTime(300)        // wait for 300ms pause in events
+      .distinctUntilChanged()   // ignore if next search term is same as previous
+      .switchMap(term => term   // switch to new observable each time
+        // return the http search observable
+        ? this.heroSearchService.search(term)
+        // or the observable of empty heroes if no search term
+        : Observable.of<Hero[]>([]))
+      .catch(error => {
+        // TODO: real error handling
+        console.log(error);
+        return Observable.of<Hero[]>([]);
+      });
+  }
+  gotoDetail(hero: Hero): void {
+    let link = ['/detail', hero.id];
+    this.router.navigate(link);
+  }
+}
+
+```
+
+
+```
+private searchTerms = new Subject<string>();
+
+search(term: string): void {
+  this.searchTerms.next(term);
+}
+
+```
+`Subject`（主题）是一个可观察的事件流中的生产者。 `searchTerms`生成一个产生字符串的`Observable`，用作按名称搜索时的过滤条件。
+每当调用`search`时都会调用`next`来把新的字符串放进该主题的可观察流中。
+
+### 初始化HEROES属性(NGONINIT)
+`Subject`也是一个`Observable`对象。 我们要把搜索词的流转换成`Hero`数组的流，并把结果赋值给`heroes`属性。
+```
+heroes: Observable<Hero[]>;
+
+ngOnInit(): void {
+  this.heroes = this.searchTerms
+    .debounceTime(300)        // wait for 300ms pause in events
+    .distinctUntilChanged()   // ignore if next search term is same as previous
+    .switchMap(term => term   // switch to new observable each time
+      // return the http search observable
+      ? this.heroSearchService.search(term)
+      // or the observable of empty heroes if no search term
+      : Observable.of<Hero[]>([]))
+    .catch(error => {
+      // TODO: real error handling
+      console.log(error);
+      return Observable.of<Hero[]>([]);
+    });
+}
+
+```
+如果我们直接把每一次用户按键都直接传给HeroSearchService，就会发起一场HTTP请求风暴。 这可不好玩。我们不希望占用服务器资源，也不想耗光蜂窝移动网络的流量。
+
+幸运的是，我们可以在字符串的Observable后面串联一些Observable操作符，来归并这些请求。 我们将对HeroSearchService发起更少的调用，并且仍然获得足够及时的响应。做法如下：
+
+- 在传出最终字符串之前，debounceTime(300)将会等待，直到新增字符串的事件暂停了300毫秒。我们实际发起请求的间隔永远不会小于300ms。
+- distinctUntilChanged确保只在过滤条件变化时才发送请求，这样就不会重复请求同一个搜索词了。
+- switchMap会为每个从debounce和distinctUntilChanged中通过的搜索词调用搜索服务。它会取消并丢弃以前的搜索可观察对象，只保留最近的。
+
+### 导入RxJS操作符
+
+Angular的基本版Observable实现中，RxJS操作符是不可用的。 我们得导入它们，以扩展Observable。
+通过在本文件的顶部写上适当的import语句，我们可以为Observable扩展出这里用到的那些操作符。
+>有很多权威人士建议我们这样做。
+
+在这个例子中，我们使用一些不同的方法。 我们把整个应用中要用的那些RxJS Observable扩展组合在一起，放在一个单独的RxJS导入文件中。
+```
+// Observable class extensions
+import 'rxjs/add/observable/of';
+import 'rxjs/add/observable/throw';
+
+// Observable operators
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/debounceTime';
+import 'rxjs/add/operator/distinctUntilChanged';
+import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/switchMap';
+
+```
+
+我们在顶级的AppModule中导入rxjs-extensions就可以一次性加载它们
+```
+import './rxjs-extensions';
+```
+
+### 为仪表盘添加搜索组件
+将表示“英雄搜索”组件的HTML元素添加到DashboardComponent模版的最后面。
+```
+<h3>Top Heroes</h3>
+<div class="grid grid-pad">
+  <a *ngFor="let hero of heroes"  [routerLink]="['/detail', hero.id]"  class="col-1-4">
+    <div class="module hero">
+      <h4>{{hero.name}}</h4>
+    </div>
+  </a>
+</div>
+<hero-search></hero-search>
+
+```

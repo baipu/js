@@ -1,0 +1,50 @@
+双向数据绑定
+
+	
+
+
+
+  一、更换样式
+		1、
+			<p class="text-{{color}}">测试css</p>
+		2、 ng-class
+				这种写法：ng-class='{结果：判断式}'
+
+				<div ng-class='{error:isError,warning:isWarning}'> {{messageText}}</div>
+				<button ng-click="showWarning()"></button>
+				css：
+					.error{background-color:red;}
+					.warning{background-color:yellow}
+				js:
+					function($Scope){
+						$scope.isError=true;
+						$scope.isWarning=false;
+						$scope.showWarning=function(){
+							$scope.isError = false;
+							$scope.isWarning= true;
+						};
+						$scope.showError=function(){
+							$scope.isError = true;
+							$scope.isWarning= false;
+						};
+					}
+	二、ng-show ng-hide
+		<div ng-show="判断式"></div>
+	
+	三、ngAnimate
+		动画的支持
+		@kerframe
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

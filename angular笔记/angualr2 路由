@@ -1,0 +1,602 @@
+新的需求
+===
+- 添加一个仪表盘视图。
+- 在英雄列表和仪表盘视图之间导航。
+- 无论在哪个视图中点击一个英雄，都会导航到该英雄的详情页。
+- 在邮件中点击一个深链接，会直接打开一个特定英雄的详情视图。
+
+我们将把Angular路由器加入应用中，以满足这些需求。(译注：硬件领域中的路由器是用来帮你找到另一台网络设备的，而这里的路由器用于帮你找到一个组件)
+
+行动计划
+===
+- 把AppComponent变成应用程序的“壳”，它只处理导航，
+- 把现在由`AppComponent`关注的英雄们移到一个独立的`HeroesComponent`中，
+- 添加路由
+- 创建一个新的`DashboardComponent`组件
+- 把仪表盘加入导航结构中。
+
+1.拆分AppComponent
+===
+AppComponent组件应该只处理导航。 我们来把英雄列表的显示职责，从`AppComponent`移到`HeroesComponent`组件中。
+
+HeroesComponent
+---
+`AppComponent`的职责已经被移交给`HeroesComponent`了。 与其把`AppComponent`中所有的东西都搬过去，不如索性把它改名为`HeroesComponent`，然后单独创建一个新的`AppComponent`壳。
+改名的步骤如下：
+
+1. 把app.component.ts文件改名为heroes.component.ts
+2. 把AppComponent类改名为HeroesComponent
+3. 把my-app选择器改名为my-heroes
+```
+    @Component({
+      selector: 'my-heroes',
+    })
+    export class HeroesComponent implements OnInit {
+    }
+```
+创建AppComponent
+===
+新的AppComponent将成为应用的“壳”。 它将在顶部放一些导航链接，并且把我们要导航到的页面放在下面的显示区中。
+这些起始步骤是：
+
+添加支持性的import语句。
+- 创建一个名叫app.component.ts的新文件。
+- 定义一个导出的 `AppComponent类。
+- 在类的上方添加@Component元数据装饰器，装饰器中带有my-app选择器。
+- 将下面的项目从HeroesComponent移到AppComponent：
+-- title类属性
+- - @Component模板中的<h1>标签，它包含了对title属性的绑定。
+-在模板的标题下面添加<my-heroes>标签，以便我们仍能看到英雄列表。
+-添加HeroesComponent组件到根模块的declarations数组中，以便Angular能认识<my-heroes>标签。
+-添加HeroService到AppModule的providers数组中，因为我们的每一个视图都需要它。
+-从HerosComponent的providers数组中移除HeroService`，因为它被提到模块了。
+-导入AppComponent。
+
+app.component
+```
+import { Component } from '@angular/core';
+@Component({
+  selector: 'my-app',
+  template: `
+    <h1>{{title}}</h1>
+    <my-heroes></my-heroes>
+  `
+})
+export class AppComponent {
+  title = 'Tour of Heroes';
+}
+```
+
+app.modules
+```
+import { NgModule }       from '@angular/core';
+import { BrowserModule }  from '@angular/platform-browser';
+import { FormsModule }    from '@angular/forms';
+import { AppComponent }        from './app.component';
+import { HeroDetailComponent } from './hero-detail.component';
+import { HeroesComponent }     from './heroes.component';
+import { HeroService }         from './hero.service';
+@NgModule({
+  imports: [
+    BrowserModule,
+    FormsModule
+  ],
+  declarations: [
+    AppComponent,
+    HeroDetailComponent,
+    HeroesComponent
+  ],
+  providers: [
+    HeroService
+  ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule {
+}
+```
+
+添加路由
+===
+
+设置base标签
+---
+打开index.html并且在<head>区的顶部添加<base href="/">语句。
+
+index.html (base-href)
+```
+<head>
+  <base href="/">
+```
+
+配置路由
+---
+路由告诉路由器，当用户点击链接或者把URL粘贴到浏览器地址栏时，应该显示哪个视图。
+
+我们的第一个路由是指向HeroesComponent的。
+app/app.module.ts (heroes route)
+```
+import { RouterModule }   from '@angular/router';
+
+RouterModule.forRoot([
+  {
+    path: 'heroes',
+    component: HeroesComponent
+  }
+])
+
+```
+
+这个Routes是一个路由定义的数组。 此刻我们只有一个路由定义，但别急，后面还会添加更多。
+
+路由定义包括几个部分：
+path: 路由器会用它来匹配浏览器地址栏中的地址，如`heroes`。
+component: 导航到此路由时，路由器需要创建的组件（`HeroesComponent`）。
+
+让路由器可用
+---
+我们设置了初始路由配置。现在把它添加到AppModule里。添加配置好的RouterModule到AppModule的imports数组中。
+app/app.module.ts (app routing)
+```
+import { NgModule }       from '@angular/core';
+import { BrowserModule }  from '@angular/platform-browser';
+import { FormsModule }    from '@angular/forms';
+import { RouterModule }   from '@angular/router';
+
+import { AppComponent }        from './app.component';
+import { HeroDetailComponent } from './hero-detail.component';
+import { HeroesComponent }     from './heroes.component';
+import { HeroService }         from './hero.service';
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    FormsModule,
+    RouterModule.forRoot([
+      {
+        path: 'heroes',
+        component: HeroesComponent
+      }
+    ])
+  ],
+  declarations: [
+    AppComponent,
+    HeroDetailComponent,
+    HeroesComponent
+  ],
+  providers: [
+    HeroService
+  ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule {
+}
+```
+
+这里使用了forRoot方法，因为我们在应用根部提供配置的路由器。forRoot方法提供了路由需要的路由服务提供商和指令，并基于当前浏览器URL初始化导航。
+
+路由插座(Outlet)
+---
+如果我们把路径`/heroes`粘贴到浏览器的地址栏，路由器会匹配到`'Heroes'`路由，并显示`HeroesComponent`组件。 但问题是，该把它显示在哪呢？
+
+我们必须告诉它位置，所以我们把`<router-outlet>`标签添加到模板的底部。 `RouterOutlet是RouterModule`提供的指令之一。 当我们在应用中导航时，路由器就把激活的组件显示在`<router-outlet>`里面。
+
+路由器链接
+---
+我们当然不会真让用户往地址栏中粘贴路由的URL，而应该在模板中的什么地方添加一个锚标签。点击时，就会导航到`HeroesComponent`组件。
+app/app.component.ts (template-v2)
+```
+template: `
+   <h1>{{title}}</h1>
+   <a routerLink="/heroes">Heroes</a>
+   <router-outlet></router-outlet>
+ `
+```
+注意，锚标签中的`[routerLink]`绑定。 我们把`RouterLink`指令(`ROUTER_DIRECTIVES`中的另一个指令)绑定到一个字符串。 它将告诉路由器，当用户点击这个链接时，应该导航到哪里。
+由于这个链接不是动态的，我们只要用一次性绑定的方式绑定到路由的路径（`path`）就行了。 回来看路由配置表，我们清楚的看到，这个路径 —— '/heroes'就是指向HeroesComponent的那个路由的路径。
+
+
+添加一个仪表盘
+---
+先创建一个DashboardComponent的占位符，让我们可以导航到它或从它导航出来。
+app/dashboard.component.ts (v1)
+```
+
+import { Component } from  '@angular/core';
+
+@Component({
+    selector:'my-dashboard',
+    template:'<h3>My dashboard </h3>'
+})
+export class DashboardComponent{
+
+}
+```
+### 配置仪表盘路由
+回到app.module.ts，我们得告诉它如何导航到这个仪表盘。
+
+先导入DashboardComponent类，然后把下列路由的定义添加到Routes数组中。
+```
+{
+  path: 'dashboard',
+  component: DashboardComponent
+},
+```
+添加依赖
+app/app.module.ts (dashboard)
+```
+declarations: [
+  AppComponent,
+  DashboardComponent,
+  HeroDetailComponent,
+  HeroesComponent
+],
+```
+### 重定向
+
+我们希望在应用启动的时候就显示仪表盘，而且我们希望在浏览器的地址栏看到一个好看的URL，比如/dashboard。 记住，浏览器启动时，在地址栏中使用的路径是/。
+### 添加导航到模版中
+
+最后，在模板上添加一个到仪表盘的导航链接，就放在Heroes（英雄列表）链接的上方。
+
+app/app.component.ts (template-v3)
+```
+template: `
+   <h1>{{title}}</h1>
+   <nav>
+     <a routerLink="/dashboard">Dashboard</a>
+     <a routerLink="/heroes">Heroes</a>
+   </nav>
+   <router-outlet></router-outlet>
+ `
+```
+仪表盘上的顶级英雄
+==
+我们想让仪表盘更有趣，比如：一眼就能看到四个顶级英雄。
+
+把元数据中的template属性替换为templateUrl属性，它将指向一个新的模板文件。
+
+设置moduleId属性到module.id，相对模块加载templateUrl。
+app/dashboard.component.ts (metadata)
+```
+@Component({
+  moduleId: module.id,
+  selector: 'my-dashboard',
+  templateUrl: 'dashboard.component.html',
+})
+```
+
+app/dashboard.component.html
+```
+<h3>Top Heroes</h3>
+<div class="grid grid-pad">
+  <div *ngFor="let hero of heroes" class="col-1-4">
+    <div class="module hero">
+      <h4>{{hero.name}}</h4>
+    </div>
+  </div>
+</div>
+
+```
+### 共享HeroService
+
+我们想要复用HeroService来存放组件的heroes数组。
+### 获取英雄数据
+打开dashboard.component.ts文件，并把必备的import语句加进去。
+```
+import { Component, OnInit } from '@angular/core';
+
+import { Hero } from './hero';
+import { HeroService } from './hero.service';
+
+```
+我们需要实现`OnInit`接口，因为我们将在`ngOnInit`方法中初始化英雄数组 —— 就像上次一样。 我们需要导入`Hero`类和`HeroService`类来引用它们的数据类型。`
+
+我们现在就实现`DashboardComponent`类，像这样：
+app/dashboard.component.ts (class)
+```
+export class DashboardComponent implements OnInit {
+
+  heroes: Hero[] = [];
+
+  constructor(private heroService: HeroService) { }
+
+  ngOnInit(): void {
+    this.heroService.getHeroes()
+      .then(heroes => this.heroes = heroes.slice(1, 5));
+  }
+}
+```
+我们在之前的HeroesComponent中也看到过类似的逻辑：
+
+- 创建一个heroes数组属性
+- 在构造函数中注入HeroService，并且把它保存在一个私有的heroService字段中。
+- 在Angular的ngOnInit生命周期钩子里面调用服务来获得英雄数据。
+- 在仪表盘中我们用Array.slice方法提取了四个英雄（第2、3、4、5个）。
+
+刷新浏览器，在这个新的仪表盘中就看到了四个英雄。
+
+导航到英雄详情
+---
+虽然我们在HeroesComponent组件的底部显示了所选英雄的详情，但我们还从没有导航到HeroDetailComponent组件过 —— 我们曾在需求中指定过三种方式：
+1. 从Dashboard（仪表盘）导航到一个选定的英雄。
+2. 从Heroes（英雄列表）导航到一个选定的英雄。
+3. 把一个指向该英雄的“深链接”URL粘贴到浏览器的地址栏。路由到一个英雄详情
+
+### 路由到一个英雄详情
+
+我们将在app.module.ts中添加一个到HeroDetailComponent的路由，也就是配置其它路由的地方。
+
+这个新路由的不寻常之处在于，我们必须告诉HeroDetailComponent该显示哪个英雄。 之前，我们不需要告诉HeroesComponent组件和DashboardComponent组件任何东西。
+
+现在，父组件HeroesComponent通过数据绑定来把一个英雄对象设置为组件的hero属性。就像这样：
+```
+<my-hero-detail [hero]="selectedHero"></my-hero-detail>
+```
+
+### 参数化路由
+我们可以把英雄的id添加到URL中。当导航到一个id为11的英雄时，我们期望的URL是这样的：
+
+```
+/detail/11
+```
+URL中的/detail/部分是固定不变的，但结尾的数字id部分会随着英雄的不同而变化。 我们要把路由中可变的那部分表示成一个参数（parameter）或令牌（token），代表英雄的id。
+### 配置带参数的路由
+```
+{
+  path: 'detail/:id',
+  component: HeroDetailComponent
+}
+```
+路径中的冒号`(:)`表示`:id`是一个占位符，当导航到这个`HeroDetailComponent`组件时，它将被填入一个特定英雄的`id`。
+
+我们已经完成了本应用的路由的配置。
+
+我们没有往模板中添加一个'英雄详情'，这是因为用户不会直接点击导航栏中的链接去查看一个特定的英雄。 它们只会通过在英雄列表或者仪表盘中点击来显示一个英雄。
+
+稍后我们会响应这些英雄的点击事件。 现在对它们做什么都还没有意义 —— 除非HeroDetailComponent已经做好了，并且能够被导航过去。
+
+那就需要对HeroDetailComponent做一次大修。
+
+修改HeroDetailComponent
+===
+在重写`HeroDetailComponent`之前，我们先看看它现在的样子：
+app/hero-detail.component.ts (current)
+
+```
+import { Component, Input } from '@angular/core';
+import { Hero } from './hero';
+@Component({
+  selector: 'my-hero-detail',
+  template: `
+    <div *ngIf="hero">
+      <h2>{{hero.name}} details!</h2>
+      <div>
+        <label>id: </label>{{hero.id}}
+      </div>
+      <div>
+        <label>name: </label>
+        <input [(ngModel)]="hero.name" placeholder="name"/>
+      </div>
+    </div>
+  `
+})
+export class HeroDetailComponent {
+  @Input() hero: Hero;
+}
+```
+模板不用修改，我们会用原来的方式显示英雄。导致这次大修的原因是如何获得这个英雄的数据。
+
+我们不会再从父组件的属性绑定中接收英雄数据。 新的HeroDetailComponent应该从ActivatedRoute服务的可观察对象params中取得id参数， 并通过HeroService服务获取具有这个指定id的英雄数据。
+```
+// Keep the Input import for now, we'll remove it later:
+import { Component, Input, OnInit } from '@angular/core';
+import { ActivatedRoute, Params }   from '@angular/router';
+import { Location }                 from '@angular/common';
+
+import { HeroService } from './hero.service';
+```
+
+然后注入ActivatedRoute和HeroService服务到构造函数中，将它们的值保存到私有变量中：
+
+```
+constructor(
+  private heroService: HeroService,
+  private route: ActivatedRoute,
+  private location: Location
+) {}
+```
+然后导入switchMap运算符，之后会与路由参数Observable一起使用
+```
+import 'rxjs/add/operator/switchMap';
+```
+```
+export class HeroDetailComponent implements OnInit {
+```
+```
+ngOnInit(): void {
+  this.route.params
+    .switchMap((params: Params) => this.heroService.getHero(+params['id']))
+    .subscribe(hero => this.hero = hero);
+}
+```
+注意switchMap运算符如何将可观察的路由参数中的id映射到一个新的Observable， 即HeroService.getHero方法的结果。
+
+如果用户在getHero请求执行的过程中再次导航这个组件，switchMap再次调用HeroService.getHero之前， 会取消之前的请求。
+
+英雄的id是数字，而路由参数的值总是字符串。 所以我们需要通过JavaScript的(+)操作符把路由参数的值转成数字。
+
+### 添加HeroService.getHero
+app/hero.service.ts (getHero)
+```
+getHero(id: number): Promise<Hero> {
+  return this.getHeroes()
+             .then(heroes => heroes.find(hero => hero.id === id));
+}
+```
+### 回到原路
+现在用户可以点击AppComponent中的两个链接，或点击浏览器的“后退”按钮。 我们来添加第三个选项：一个goBack方法，它使用之前注入的Location服务， 利用浏览器的历史堆栈，导航到上一步。
+
+app/hero-detail.component.ts (goBack)
+```
+goBack(): void {
+  this.location.back();
+}
+``` 
+
+选择一个仪表盘中的英雄
+---
+当用户从仪表盘中选择了一位英雄时，本应用要导航到HeroDetailComponent以查看和编辑所选的英雄。
+
+虽然仪表盘英雄被显示为像按钮一样的方块，但是它们的行为应该像锚标签一样。 当鼠标移动到一个英雄方块上时，目标URL应该显示在浏览器的状态条上，用户应该能拷贝链接或者在新的浏览器标签页中打开英雄详情视图
+app/dashboard.component.html (repeated <a> tag)
+```
+<a *ngFor="let hero of heroes"  [routerLink]="['/detail', hero.id]"  class="col-1-4">
+```
+
+这次，我们绑定了一个包含链接参数数组的表达式。 该数组有两个元素，目标路由和一个用来设置当前英雄的id值的路由参数。
+
+这两个数组项与之前在app.module.ts添加的参数化的英雄详情路由定义中的和:id对应。
+
+
+重构路由为一个路由模块
+---
+我们应该重构路由配置到它自己的类。 什么样的类呢？ 当前的`RouterModule.forRoot()`产生一个`Angular ModuleWithProviders`，所以这个路由类应该是一种模块类。 它应该是一个路由模块。
+```
+import { NgModule }             from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { DashboardComponent }   from './dashboard.component';
+import { HeroesComponent }      from './heroes.component';
+import { HeroDetailComponent }  from './hero-detail.component';
+const routes: Routes = [
+  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: 'dashboard',  component: DashboardComponent },
+  { path: 'detail/:id', component: HeroDetailComponent },
+  { path: 'heroes',     component: HeroesComponent }
+];
+@NgModule({
+  imports: [ RouterModule.forRoot(routes) ],
+  exports: [ RouterModule ]
+})
+export class AppRoutingModule {}
+```
+
+典型路由模块值得注意的有：
+
+1. 将路由抽出到一个变量中。你将来可能会导出它。而且它让路由模块模式更加明确。
+2. 添加RouterModule.forRoot(routes)到imports。
+3. 添加RouterModule到exports，这样关联模块的组件可以访问路由的声明，比如RouterLink和RouterOutlet。
+4. 无Declarations！声明是关联模块的任务。
+5. 如果你有守卫服务，添加模块providers；本例子无守卫服务。  
+
+
+### 在HeroesComponent中选择一位英雄
+之前我们添加了从仪表盘选择一个英雄的功能。 我们现在要做的事和HeroesComponent中很像。
+
+那个组件的当前模板展示了一个主从风格的界面：上方是英雄列表，底下是所选英雄的详情。
+app/heroes.component.ts (current template)
+```
+template: `
+  <h1>{{title}}</h1>
+  <h2>My Heroes</h2>
+  <ul class="heroes">
+    <li *ngFor="let hero of heroes"
+      [class.selected]="hero === selectedHero"
+      (click)="onSelect(hero)">
+      <span class="badge">{{hero.id}}</span> {{hero.name}}
+    </li>
+  </ul>
+`,
+```
+### 添加mini版英雄详情
+```
+<div *ngIf="selectedHero">
+  <h2>
+    {{selectedHero.name | uppercase}} is my hero
+  </h2>
+  <button (click)="gotoDetail()">View Details</button>
+</div>
+```
+### 把内容移出组件文件
+
+这还没完。当用户点击查看详情按钮时，要让它能导航到HeroDetailComponent，我们还需要修改它。
+
+这个组件文件太大了。它大部分都是模板或CSS样式。 要想在HTML和CSS的噪音中看清组件的工作逻辑太难了。
+
+在做更多修改之前，我们先把模板和样式移到它们自己的文件中去：
+
+- 把模板内容剪切并粘贴到新的heroes.component.html文件。
+- 把样式内容剪切并粘贴到新的heroes.component.css文件。
+- 设置组件元数据的templateUrl和styleUrls属性，分别引用这两个文件。
+styleUrls属性是一个由样式文件的文件名(包括路径)组成的数组。 我们还可以列出来自多个不同位置的样式文件。
+app/heroes.component.ts (revised metadata)
+```
+@Component({
+  moduleId: module.id,
+  selector: 'my-heroes',
+  templateUrl: 'heroes.component.html',
+  styleUrls: [ 'heroes.component.css' ]
+})
+```
+
+### 更新HeroesComponent类
+点击按钮时，HeroesComponent导航到HeroesDetailComponent。 该按钮的点击事件被绑定到gotoDetail方法，它使用命令式的导航，告诉路由器去哪儿。
+该方法需要组件类做一些变化：
+
+- 从Angular路由器库导入router
+- 在构造函数中注入router（与HeroService一起）
+- 实现gotoDetail，调用router.navigate方法
+``` 
+gotoDetail(): void {
+  this.router.navigate(['/detail', this.selectedHero.id]);
+}
+```
+> routerLinkActive指令
+
+>Angular路由器提供了routerLinkActive指令，我们可以用它来为匹配了活动路由的HTML导航元素自动添加一个CSS类。 我们唯一要做的就是为它定义样式。真好！
+> 
+> 
+> 
+> 
+>    ```
+>    template: `
+>  <h1>{{title}}</h1>
+> <nav>
+>    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+>    <a routerLink="/heroes" routerLinkActive="active">Heroes</a>
+> </nav>
+>  <router-outlet></router-outlet>
+>`,
+```
+设置AppComponent的styleUrls属性，指向这个CSS文件。
+```
+styleUrls: ['app.component.css'],
+```
+### 应用的全局样式
+
+我们的设计师提供了一组基础样式，这些样式应用到的元素横跨整个应用。 它们与我们之前在搭建本地开发环境时安装的整套样式对应。 下面是摘录：
+```
+/* Master Styles */
+h1 {
+  color: #369;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 250%;
+}
+h2, h3 {
+  color: #444;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: lighter;
+}
+body {
+  margin: 2em;
+}
+body, input[text], button {
+  color: #888;
+  font-family: Cambria, Georgia;
+}
+/* . . . */
+/* everywhere else */
+* {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+```

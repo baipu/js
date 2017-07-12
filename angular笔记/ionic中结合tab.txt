@@ -1,0 +1,12 @@
+壹、ionic中结合tab  状态嵌套的几种方式
+		状态可以相互嵌套。有三个嵌套的方法：
+		1.使用“点标记法”，例如：.state('contacts.list', {})
+		2.使用 parent 属性，指定一个父状态的名称字符串，例如：parent: 'contacts'
+		3.使用 parent 属性，指定一个父状态对象，例如：parent: contacts（contacts 是一个状态对象）
+
+		$stateProvider
+			.state('contacts', {})
+			.state('contacts.list', {});
+贰、ionic  路由结合tap  实现页面切换	
+	1. 在 ionic tab  中定义  ion-nav- view 并且加上name属性
+		

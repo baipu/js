@@ -1,0 +1,293 @@
+Angular复习笔记<Ⅰ>：
+壹、模块：	
+	一、html中：ng-app= "myApp"
+		js中：	angular.module("myApp",[]) 其中:第一个参数是name 第二个参数是required括号中是依赖的模板 还可以添加一个参数config效果等同于Module.config
+	二、Module的成员方法：
+		animation(name,factory)//支持动画特性
+		config(callback)//注册一个在模块加载时侯进行配置的函数
+		constant(key,value)//定义一个返回一个常量的服务
+		controller(name,constructor)创建一个控制器
+		directive(name,factory)创建一个指令
+		factory(name,provider)创建一个服务
+		filter(name,provider)创建一个过滤器
+		provider(name,type)创建服务
+		name返回模块名称
+		run(callback)注册一个在angular加载完毕后用于对所有模块进行配置的函数
+		service(name,constructor)穿件服务
+		value(name,value)定义一个返回一个常量的服务
+	三、相关的组建	
+		1、控制器：
+			 myApp.controller("dayCtrl", function ($scope, days) {
+				$scope.day = days.today;
+			});		
+			每个controller支持多个视图，也可以创建多个不同的控制器		
+			注意：Module定义方法返回的仍然是Module对象本身，所以多个方法调用可以形成链式结构
+		2、指令：
+			myApp.directive("highlight", function ($filter) {
+				var dayFilter = $filter("dayName");
+				return function (scope, element, attrs) {
+					if (dayFilter(scope.day) == attrs["highlight"]) {
+						element.css("color", "red");
+					} 
+				}
+			});
+			注意：return function 参数里边的顺序不能变 还有指令参数里边是scope不是$scope
+			工厂函数和工人函数：directive的第二个参数是一个工厂函数，每次使用directive的时候调用的函数就是工人函数，执行具体的操作。	关于工厂函数和工人函数有一点很重要：不能依赖于工厂函数或者是工人函数的某个时刻被调用，你注册一个构建的时候，需要调用Module的directive的方法，建立构建的时候需要调用工厂函数，使用构建的时候用工人函数，但是这三个事件不一定按顺序进行，异步处理了。
+		3、过滤器：
+				 myApp.filter("dayName", function () {
+					var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday",
+									"Thursday", "Friday", "Saturday"];
+					return function (input) {
+						return angular.isNumber(input) ? dayNames[input] : input;
+					};
+				});		
+			过滤器的使用不一定是html里，也可以是函数/指令里边，只要在工厂函数的参数里边标注就好了
+		4、服务：
+			单例的意思是只有一个对象实例会被创建出来，被程序需要服务的各个不同部分所共享
+			 myApp.service("days", function (nowValue) {
+				this.today = nowValue.getDay();
+				this.tomorrow = this.today + 1;
+			});
+		5、定义值：
+			Module.value方法用于创建返回固定值和对象的服务。你可以为任何值或对象使用依赖注入，而不仅仅是使用module方法创建那些对象。	angularJs不会为参数xxx寻找局部变量，引用变量的时候，局部变量已经不在作用于了，不能用于注入，但是可以用闭包，但是不方便测试
+			。。。
+			var now = new Data();
+			myApp.service("days",function(now){});//此时报错，now已经不再作用于不能用来注入
+			myApp.service("days",function(){this.now=now.getDay()});//此时是利用闭包的特性
+			myApp.value("nowValue",now);//使用了值服务
+			myApp.service("days",function(nowValue){this.now = nowValue.getDay()});
+			
+		6、使用模块组织代码
+			定义四个module controller直接调用服务days 服务里边调用module.value的值 指令模板中调用过滤器，但是依赖$filter服务 在directive中直接var 打他= $filter("daysname")//dayname是一个服务的name.但是依赖关系不需要按某种顺序进行
+		7、使用模块生命周期进行工作
+			Module.config和Module.run注册了那些在AngularJs应用的生命周期的关键时刻所调用的函数， 传给config方法的函数在当前模块被加载后调用，传给run方法的函数在所有模板被加载后调用
+	        //constant注册服务
+			myApp.constant("startTime", new Date().toLocaleTimeString());
+			myApp.config(function (startTime) {			//==1===
+				console.log("Main module config: " + startTime);
+			});
+			myApp.run(function (startTime) {
+				console.log("Main module run: " + startTime);//==2===
+			});
+			angular.module("exampleApp.Services", [])
+            .service("days", function (nowValue) {
+                this.today = nowValue.getDay();
+                this.tomorrow = this.today + 1;
+            })
+            .config(function () {
+                console.log("Services module config: (no time)");==3===
+            })
+            .run(function (startTime) {
+                console.log("Services module run: " + startTime);==4===
+            });
+			其中constant方法和value方法比较类似，但是创建的服务能作为config的方法所申明依赖使用
+			最后的执行顺序3142，也就是说angular调用config的时候优先调用module依赖的模块的config
+贰、绑定&指令（默认的指令）
+	一、数据绑定的指令
+		ng-bind 单向绑定一个innerText AC
+		ng-bind-html	绑定innerHtml的	AC
+		ng-bind-template	类似于ng-bind但是允许属性中制定多个模板表达式 AC
+		ng-model	双向绑定	AC
+		ng-non-bindable	申明一个不会执行数据绑定的区域	AC
+		注意指令的作用：当用作class的时候class="ng-model:todo.length"
+		2、使用模板指令
+		ng-cloak	使用一个css样式隐藏内敛绑定表达式，在文档第一次加载时会短暂的可见 AC
+		ng-include	向DOM中加载处理和插入一段html 	AEC
+		ng-repeat	遍历元素	AC
+		ng-repeat-start //??	AC
+		ng-repeat-end //??		AC
+		ng-switch 		根据数据绑定的值修改dom中的元素
+		注意：
+			1>>>ng-repeat内置的变量
+			$index 返回当前对象或属性的位置
+			$first 当前对象是第一个的时候返回true
+			$middle   既不是第一个也不是最后一个的时候返回true
+			$last	............
+			$even	对集合中的偶数编号的对象返回true
+			$odd	对集合中的奇数编号的对象返回true
+			
+			2>>>ng-include指令的配置参数
+			src 加载的内容URL 注意:<ng-include src="'../table.html'"></ng-include>这里的src里边的还有个单引号，因为属性要当成javasrcipt计算的
+			onload	制定一个在内容被加载时候调用计算的表达式//meed eg：
+			autoscroll 制定内容被加载的时候是否要滚动到当前的位置
+			3>>>ng-switch的用法：
+					  <div ng-switch on="data.mode" ng-cloak>
+						<div ng-switch-when="Table">
+							<table class="table">
+								<thead>
+									<tr><th>#</th><th>Action</th><th>Done</th></tr>
+								</thead>
+								<tr ng-repeat="item in todos" ng-class="$odd ? 'odd' : 'even'">
+									<td>{{$index + 1}}</td>
+									<td ng-repeat="prop in item">{{prop}}</td>
+								</tr>
+							</table>
+						</div>
+						<div ng-switch-when="List">
+							<ol>
+								<li ng-repeat="item in todos">
+									{{item.action}}<span ng-if="item.complete"> (Done)</span>
+								</li>
+							</ol>
+						</div>
+						<div ng-switch-default>
+							Select another option to display a layout
+						</div>
+					</div>
+				</div>
+			注意：ng-repeat 和ng-switch只能当成元素来使用。但是ng-switch 和ng-switch-default只能是当成属性使用，所以为了统一风格，ng-switch也当成属性使用
+叁：元素与事件指令
+	一、元素指令
+		ng-if			dom中添加或移除元素 							A
+		ng-class		为某个元素设置class属性	
+		ng-class-even	对ng—repeat指令生成的偶数元素设置class属性		AC
+		ng-class-odd	对ng—repeat指令生成的奇数元素设置class属性		AC
+		ng-hide			在dom中显示和隐藏元素							AC
+		ng-show			在dom中显示和隐藏元素							AC
+		ng-style		设置一个或个css属性								AC
+		注意：ng-show和ng-hide仍然会吧元素保留在dom中，如果根据位置选择的你可以用到ng-if这个是从dom中移除
+		1、表格条纹化的问题：
+			ng-hide 和ng-show在表格条纹话的时候会有一些问题，但是我们无法在ng-repeat指令所应用到的同一个元素上使用ng-if
+			错误示范：
+			<tr ng-repeat="item in todos" ng-if="!item.complete">
+			.....
+			</tr>
+			所以这个需要用到过滤器来解决问题：
+			<tr ng-repeat="item in todos |filter:{complete:'false'}">
+			.....
+			</tr>
+	二、处理事件
+		ng-blur		失去焦点的时候		AC
+		ng-change	表单内容状态发生变化的时候
+		ng-click	单击
+		ng-dbclick	双击
+		
+		ng-copy
+		ng-cut
+		ng-past
+		
+		ng-focus	获得焦点的时候
+		
+		ng-keydown
+		ng-keypress
+		ng-keyup
+		
+		ng-mousedown
+		ng-mousenter
+		ng-mouseleave
+		ng-mousemove
+		ng-mouseover
+		ng-mouseup
+		
+		ng-submit
+		
+		事件指令的应用
+		js中：
+			$scope.handleEvent = function (e) {
+				console.log("Event type: " + e.type);
+				$scope.data.columnColor = e.type == "mouseover" ? "Green" : "Blue";
+			}
+		html中：
+			 <tr ng-repeat="item in todos" ng-class="data.rowColor"
+			ng-mouseenter="handleEvent($event)"
+			ng-mouseleave="handleEvent($event)">
+		注意：1、mouseenter实际被表示成mouseover mouseleave被表示为mouseout	这个锅浏览器背！
+			2、尽量使用事件指令，将触发事件时所执行的逻辑放到控制器行为中
+		自定义事件指令：
+		js中：
+			.directive("tap", function () {
+                return function (scope, elem, attrs) {
+                    elem.on("touchstart touchend", function () {
+                        scope.$apply(attrs["tap"]);
+                    });
+                }
+            });
+		html:
+			<div class="well" tap="message = 'Tapped!'">
+				{{message}}
+			</div>
+	三、管理特殊属性
+		1、布尔属性
+		ng-checjed ng-disabled ng-open(在details元素上使用) ng-readonly(input上用) ng-selected
+		2、其他属性
+			ng-href	 ng-src	ng-srcset(在img元素上设置secset属性，srcset属性是扩展到html5的起草标准之一，允许为显示不同的大小和像素密度而制定多个图片，但是浏览器的支持比较有限)
+		注意：ng-href会防止angular.js处理完元素之前，用户单击链接跳到错误的目标位置
+肆：表单的使用
+	一、隐式创建数据模型对象：
+		也就是表单里直接绑定没有定义的数据模型，激活的时候angular将自动生成对应的数据模型，但是需要考虑到提交的时候，如果没有提交东西的话就会报错，无法调用未定义的模型，所以需要在使用表单数据之前用angular.isDefined的方法来检验每个数据
+	二、表单验证：
+		formName.$invalid:表单是否有错
+		要禁用浏览器所支持的校验,启用angulaJS校验功能，需要在自己的表单上添加novalidate属性
+		input的type属性：h5之前的：checkbox radio text 新定义：emial number url
+		监控表单的有效性:
+			$pristine	如果用户没有与表单产生交互返回true
+			$dirty		产生交互，返回true
+			$valid		当元素/表单内容校验结果有效时候返回true
+			$invalid	当元素/表单内容校验结果无效时候返回true
+			$error		提供校验错误的详细信息
+	三、表单校验的反馈信息
+		1、css提供校验反馈信息
+			ng-pristine	ng-dirty	ng-valid	ng-invalid
+			eg:	
+			js:
+				$scope.getError = function (error) {
+                    if (angular.isDefined(error)) {
+                        if (error.required) {
+                            return "Please enter a value";
+                        } else if (error.email) {
+                            return "Please enter a valid email address";
+                        }
+                    }
+                }
+			css：
+				 <style>
+				 //特定的校验反馈信息
+					form .ng-invalid-required.ng-dirty { background-color: lightpink; }
+					form .ng-invalid-email.ng-dirty { background-color: lightgoldenrodyellow; }
+					form .ng-valid.ng-dirty { background-color: lightgreen; }
+					span.summary.ng-invalid { color: red; font-weight: bold; }
+					span.summary.ng-valid { color: green; }
+					div.error {color: red; font-weight: bold;}
+				</style>
+			html:
+				<div class="error" ng-show="myForm.userEmail.$invalid && myForm.userEmail.$dirty">
+					{{getError(myForm.userEmail.$error)}}
+				</div>
+				//填写之前，所有的input都是属于ng-pristine	填写后属于ng-dirty和ng-valid/ng-invalid成员,ng-(in)valid与ng-dirty一起使用
+		2、特殊变量提供反馈信息
+			ng-show="formName.inputName.$error.valName"
+			eg：见上边例子里的$scope.getError 
+		3、延迟校验反馈：
+			在ng-submit的方法里边进行判断是否通过审核
+				 $scope.addUser = function (userDetails) {
+                    if (myForm.$valid) {
+                        $scope.message = userDetails.name
+                            + " (" + userDetails.email + ") (" 
+                            + userDetails.agreed + ")";
+                    } else {
+                        $scope.showValidation = true;
+                    }
+                }
+	四、表单的指令属性：
+		input元素的时候：
+			ng-model	ng-change 	g-minlength	ng-axlength ng-pattern ng-required
+			当type为email url number时候，angular将会自动设置ng-pattern属性为响应的这功能则表达式，并检车格式是否匹配，对于这些不应在设置ng-pattern
+		复选框的时候：
+			ng-model ng-change ng-true-value ng-false-value
+			ng-true-value ng-false-value 属性的值被用于设置所绑定的表达式的值，但是只是在复选框勾选状态改变是生效
+		使用选择列表：
+			ng-required ng-options
+			<select ng-model="selectvalue" ng-options="item.action for item in todos">
+			1>改变第一个选项元素
+				<select ng-model="selectvalue" ng-options="item.action for item in todos">	
+					<option value=""class="">(Pick One)<option>
+				</select>
+			2>改变选项值
+				<select ng-model="selectvalue" ng-options="item.id as item.action for item in todos">	
+					<option value=""class="">(Pick One)<option>
+				</select>
+				这样显示的是item.action但是传值为item.id
+			3>创建选项组元素
+				<select ng-model="selectvalue" ng-options="item.id as item.action group by item.place for item in todos">	
+					<option value=""class="">(Pick One)<option>
+				</select>

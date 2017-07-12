@@ -1,0 +1,61 @@
+先看例子：
+	js:
+	var bookstoreApp = angular.module('bookstoreApp',['ngRoute','ngAnimate']);
+	bookStoreApp.config(function($routeProvider){
+		$routeProvider.when('/hello',{
+			templateUrl:'tpls/hello.html',
+			controler:'HelloCtrl'
+		}).when('/lsit',{
+		templateUrl:'tpls/booklist.html',
+		controler:'BookListCtrl'
+		}).otherwise({
+			redirectTo:‘/hello’
+		})
+	});
+	
+	$routeProvider  angularjs自身的路由机制
+	1.2之后route不在angular.js之中
+	angular-route.js
+	
+	弊端无法深层次嵌套，所以需要github 搜索angular-ui 第三方的插件 ui-router
+	网址：angular-ui.github.io/ui-router/sample/#/about
+	
+ui-router	
+	1、html写法
+		<div ui-view></div>  //表示视图
+		
+		tpls3/index.html 文件
+		<div class="container">
+			<div ui-view="topbar"></div>
+			<div ui-view="main"></div>
+		</div>
+	2、js代码
+		routerApp.config(function($stateProvider,$urlRouterProvider){
+			$stateProvider.state(
+			'index',{
+				url:'/index',
+				views:{
+					'':{
+						temolateUrl:'tpls3/index.html'
+					},
+					'topbar@index':{
+						temolateUrl:'tpls3/top.html'
+					},
+					'main@index':{
+						temolateUrl:'tpls3/home.html'
+					},
+					
+				}
+			})
+		}
+	
+路由基本原理
+		》哈希#页内导航
+		》html5的history API
+		》核心就是给应用定义状态
+	
+	
+	
+	
+	
+	

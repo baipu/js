@@ -1,0 +1,454 @@
+Angular复习笔记<Ⅱ>：
+伍：使用控制器和作用域：
+	一、定义
+		angular.module("exampleApp", [])
+		.controller("simpleCtrl", function ($scope) {
+		});
+	严格的说$scope不是一个服务，是$rootScope的服务提供的一个对象，但是可以看成一个服务。
+	当控制器申明了对一个服务的依赖的时候，就可以使得控制器通过其对应的作用于向视图提供各种的能力。两种方法通过控制器使用作用域，可以定义数据也可以定于行为。
+	二、组织控制器
+		1、单一控制器
+			controller=>scope=>view	当为了交付程序功能而不断的增填所需的行为的时候，将会得到一大堆的代码
+		2、复用控制器
+			多个视图用同一个控制器，这样不同的视图对同一份数据和功能进行展示，这时候两个页面的scope各自分工，互不干扰。
+			1>>>作用域之间的通信：
+				用于接受和发送时间的作用域的方法：
+				$broadcast(name,args)	向当前作用于下所有的子作用于发送一个事件，参数是事件名称以及一个用于向时间提供额外数据的对象
+				$emit(name,args)	向当前作用域的父作用与发送一个事件，直至根作用域
+				$on(name,handler)	注册一个事件处理函数，该函数在特定的事件被当前作用域收到时将会被调用
+				
+				eg:
+				$scope.$on("zipCodeUpdated", function (event, args) {
+                    $scope[args.type] = args.zipCode;
+                });//监听下发的事件
+
+                $scope.setAddress = function (type, zip) {
+				//设置地址就是利用rootScope向下所有的scope发送已经得到的东西
+                    $rootScope.$broadcast("zipCodeUpdated", {
+                        type: type, zipCode: zip 
+                    });
+                    console.log("Type: " + type + " " + zip);
+                }
+
+                $scope.copyAddress = function () {
+                    $scope.zip = $scope.billingZip;
+                }
+	
+			2>>>使用服务调节作用域事件：
+				如果有多个需要发送同一类事件的控制器的时候，该方法可以减少重复，服务可以被控制器用来发送和接受事件，无需直接与作用域中的事件方法产生交互
+				 .service("ZipCodes", function($rootScope) {
+					return {
+					//服务的内容就是想rootScope里边发送事件参数
+						setZipCode: function(type, zip) {
+							this[type] = zip;
+							$rootScope.$broadcast("zipCodeUpdated", {
+								type: type, zipCode: zip 
+							});
+						}
+					}
+				})
+				.controller("simpleCtrl", function ($scope, ZipCodes) {
+					//监听是否发送了事件
+					$scope.$on("zipCodeUpdated", function (event, args) {
+						$scope[args.type] = args.zipCode;
+					});
+					//调用方法的时候用到了服务
+					$scope.setAddress = function (type, zip) {
+					//拥有两个参数，然后调用服务方法，向下发送事件和参数
+						ZipCodes.setZipCode(type, zip);
+						console.log("Type: " + type + " " + zip);
+					}
+					$scope.copyAddress = function () {
+						$scope.zip = $scope.billingZip;
+					}
+				});
+		3、使用控制器继承：
+			1》》扩展被继承的数据和行为
+			2》》覆盖被继承的数据和行为
+			3》》理解数据继承
+				当子类继承父类，用父类ctrl的方法的时候，子控制器所在的input框有v-model =dataValue，这时候只要改变子类的input框就会创建子类对象，和父类分离，但是ng-model=data.dataValue这时候会和父类数据依然保持一致
+				
+			注意：AngularJs上的习惯是通过接收参数的行为，而不是直接在值上进行操作
+			每个控制器创建的作用域之间进行通讯时，必须使用到根作用域。
+			4》》无作用域的控制器
+				一个提供给视图的代表控制器的特殊变量
+				
+				1>>这里没有声明对$scope的依赖，而是通过this定义自己的数值和行为
+				2>>表达式为：<要应用的控制器> as <变量名>
+				3>>html使用控制器的变量的时候用的是控制器变量名.方法/属性
+				4>>js里设置变量一及方法的时候都是用this
+				js:
+				var app =angular.module("exampleApp",[]).controller("simpleCtrl",function(){
+					this.dataValue = "Hello World";
+					this.reverseText = function(){
+						thidataValue = this.dataValue.split("").reverse.join("");
+					}
+				});
+				html:
+				<div class="well" ng-controller="simpleCtrl as ctrl">
+					<button class="btn btn-default" type="button" ng-click="ctrl.reverseText()" ></button>
+					
+					<input ng-model="ctrl.dataValue">
+				
+				</div>
+		4、显式的更新作用域
+			$apply(express)	:向作用域应用变化
+			$watch(express,handler)：注册一个函数，express表达式应用的值变化时候，函数将会被通知到
+			$watchCollection(object,hadler)：注册一个函数，制定的object的对象的任一属性变化时候，函数将会被通知到
+			注意:你可以向$apply传递函数而不是表达式，在创建自定义指令的时尤为用，且允许你在响应用户交互时候使用指令所管理的元素自己定义对作用域的更新方法。
+陆：过滤器：
+	定义一个数据转换过程，使其能在整个应用程序中得到使用，不用捆绑到特定的控制器或者是数据类型上，。一般来说是对数据从作用于传递到指令上时候进行转换，但是不干涉数据源
+	why:过录取包含了转换逻辑，这些逻辑可以被用于向视图中显示程序中的任何数据
+	when:过滤器用于在数据被指令处理并显示到视图之前，将其格式化
+	一、过滤单个数值
+		内置过滤器：
+			currency	货币值得格式化
+			date		日期格式化	{{getExpriydate(p.expiry|data:"dd MMM yy")}}
+			json		number		uppercase/lowercase
+			
+			data支持的格式化字符串的成分
+			yyyy	对年份四位数的表示 			yy	两位数年份的表示
+			MMMM 	月份全称（January）			MMM 月份的简称				MM	数字形式的月份，两位数字01	M	无补齐的月份1
+			dd		每月的第几日，补充01		d	每月的第几日，不补充1
+			EEEE	星期几，全称				EEE	星期几的简称
+			HH		二十四小时补齐				H	二十四小时不补齐		hh	12小时补齐					h 十二小时不补齐
+			mm									mm							ss								s
+			a		上午下午的标志				时区四位字符表示形式
+		
+	二、本地化过滤器输出
+		currency	number date都支持本地化输出
+		date过滤器支持的快捷格式字符串
+		medium		 MMM d, y h:mm:ss:a
+	三：过滤集合：
+	
+		1、limitTo	{a|limitTo:5}	ng-repeat="p in product | limitTo:limitVal" 只是遍历前边几个
+			limitTo也可以对字符串值进行操作，把每个字符当作数组中的一个对象那样处理
+		2、选取项：
+			选取条件可以是一些表达项：
+				<tr ng-repeat="p in product|filter:{category:'fish'}">//对数组里边的对象的category的值为fish才被筛选出来
+				所以filter:之后可以加一个表达式
+		3、对项目进行排序：
+			<tr ng-repeat ="p in products | orderBy:'price'>
+			//注意里边的单引号'' 没有引号的话，过滤器会以为你引用的是一个变量
+			1》》倒序	<tr ng-repeat ="p in products | orderBy:'-price'>
+			2》》函数	$scope.myCustomSorter = function (item){return item.expiry<5?0:item.price;}
+			3》》用多个谓语进行排序		<tr ng-repeat="p in products | orderBy:[myCustonSorter,'-price']>
+		4、 链式过滤器
+			<tr ng-repeat="p in products | orderBy:[myCustonSorter,'-price'] | limitTo:5 >
+	四、 创建自定义过滤器：
+		1、创建格式化数据值的过滤器
+			Module.filter方法创建的，两个参数：带创建的过滤器名称  工厂函数
+			angular.module("exampleApp")
+				.filter("labelCase",function(){
+					return function(value ,reverse){
+						if(angular,isString(value)){
+							var intermediate = reverse?value.toUpperCase():value.toLowerCase();
+							return (reverse ? intermediate[0].toLowerCase():intermedate[0].toUpperCase())+intermediate.substr(1);
+						}else{
+						return value;
+						}
+					}
+				})
+		2、已有的过滤器上搭建新的过滤器
+			angular.modulr("exampleApp").filter("take",function($filter){//已有的过滤器
+					return function(datea,skipCount,takeCount){
+						var skippedData = $filter("skip")(data,skipCount);//先通过skip的过滤器得到返回的值，然后再将这个值经过limitTo处理
+						return $filter("limitTo")(skippedData,takeCount);
+					}
+			});
+			
+			
+柒：自定义的指令、
+	why:自定义指令让你能创建出超越Angular所提供的内置指令的功能
+	when:当内置指令无法按照你所想要的方式工作的时候，或者是你想创建可复用于不同应用程序的自包含的功能的时候就可以创建自定义指令
+	一、创建自定义的指令
+		angular.module("exampleApp").directive("unorderedList",function(){
+			return function(scope,element,attrs){
+				
+			}
+		})
+		
+		注意：命名规则：unorderedList在html中用的时候就是unordered-list除首字母外的大写的字母被解析成 -+小写。
+		注意：scope element attrs参数知识普通的javaScript参数，而不是通过以来注入提供的，也就是说，被传入的对象的顺序是固定的
+		1、实现链接函数
+			作用域中获取数据：var data = scope[attrs["unorderedList"]];
+			
+			生成HTML元素：	var listElem = angular.element("<ul>");element.append(listElem);
+			for(var i=0;i<data.length;i++){listElement.append(angular.element("<li>").text(data[i].name))}
+			
+			jqLite方法通过传给链接函数的element参数暴露出来
+			大多数jqLite方法返回的结果是拥有访问jqLite各种功能的另一个对象。Angular不会暴露浏览器所提供的Dom API 任何时如果想对元素及你选哪个操作，都会期望接受一个jqList对象。如果没有jqLite对象，想创建一个的时候就用：angular.elemnt("<li>").text(data[i].name)
+			
+			
+		2、打破对数据属性的依赖：
+			1>>添加一个支持属性 	就是专门写一属性来控制
+				如果属性名是以data-为前缀的，angularjs会在生成传给链接函数的属性集合时移除这一前缀。也就是说属性名被规范化并传给链接函数的时候，属性data-list-property和list-property没有差别，都会表示为listProperty
+			2>>计算表达式 scope.eval
+				让作用域将属性当作一个表达式来进行计算	通过scope.$eval的方法可以做到这一点，传给该方法的是要计算的表达式和需要用于执行该计算的任意本地数据
+		3、处理数据变化
+			响应作用域中数据变化的能力
+			1>>	监听	$watch 用于一个字符串表达式和一个处理函数
+				。。。
+				var itemElement = angular.element("<li>");
+				listElem.append(itemElement);
+				var watcherFn = function(watchScope){ //监听器函数
+					return watchScope.$eval(propertyExpression,data[i]);
+				}
+				scope.$watch(watcherFn,function(newValue,oldValue){	//处理函数
+					itemElement.text(newValue);
+				})
+				。。。
+			2>>	修复词法作用域：	闭包，允许函数引用其作用域之外的变量，但是函数访问的变量是在函数被调用时候进行的，而不是函数被定义时候,调用的时候，需要对闭包的特性加以控制，以便用一固定的或者是有界的变量来引用数据对象，所以需要实时更新的数据放到自执行的函数里
+			IIFE:自执行函数
+	二、jqLite
+		1、对文档对象模型的导航
+			jqLite对 定位文档对象模型dom 中元素的支持
+			element参数代表的是指令所引用到的元素的jqLite对象
+			关于DOM导航的jqLite方法
+			children()	返回一组子元素，这个方法的jqLite实现不支持jquery所提供的选择器特性
+			eq(index)	从一个元素系和众返回指定索引下的元素
+			find(tag)	按照指定的tag名称定位所有的后代元素，jquery的实现为选择元素提供了额外的选项，在这个方法的jqLite实现中不可用
+			next()	获得下一个兄弟元素
+			parent() 返回父元素
+			
+			if(items.eq(i).text() == "Orange" ){}// the items is the object of jqLite
+			items.eq(i).css("font-weight","bold");//use the jqlite set css
+			
+			var items = element.find("li");// 返回了一个数组
+		2、修改元素
+			addClass(name)	attr(name) attr(name,value)//获的第一个元素的指定特性的值，或者是为所有元素设指定值
+			css(name),css(name,value)	hasClass(name)	返回一个布尔类型
+			prop(name) porp(name,value)	//获的第一个元素的指定属性的值，或者是为所哟ude元素设指定值
+			removeAttr(name)//jqLite对象中所有的元素中移除某个特性
+			removeClass(name)从jqLite对象中移除具有制定class的元素
+			text() text(value)//获取/设置元素的文本的内容拼接后的结果，或者是设置所有元素的文本内容，注意他返回的是所有拼接的而不是第一个
+			
+			toggleClass(name)：为jqLite对象中的所有的元素切换制定class的所属资格，那些不在class中的元素将被添加到其中，而那些在class中的元素将会从中移除。
+			
+			val()val(value)获取jqLite对象中第一个元素的value特性，或者设置所有元素的value特性
+			
+			注意：attr 和	prop的区别：
+				prop处理的是被dom api htmlElement对象定义的属性，而不是被标记语言中的HTML元素所定义的特性。通常特性属性一样的，但是并非总是如此，
+				根据官方的建议：具有 true 和 false 两个属性的属性，如 checked, selected 或者 disabled 使用prop()，其他的使用 attr()
+				
+		3、创建和移除元素
+			angular.element(html)//创建一个代表特定html字符串的元素的jqLite对象
+			after(element),在调用方法的背后插入特定内容
+			append(element)在调用方法的jqLite对象的每一个元素上，将特定元素作为最后一个子元素插入
+			clone()	从方法调用的对象复制元素并作为一个新的jqLite对象返回
+			prepend(elements)
+			remove()
+			replaceWith(elements)制定元素替换调用方法的jqLite对象的元素
+			wrap(elemens)使用特定元素包装jqLite对象的每个元素
+		4、处理事件
+			on(events,handler)//为jqLite对象所代表的元素发生的时间注册一个处理器
+			off(events,handler)移除一个已经注册好的处理器
+			triggerHandler(event)对jqLite对象所代表的所有的元素上注册的制定事件按触发所有的处理器
+				var buttons = element.find("button");
+				buttons.on("click",function(e){....});
+		5、其他的jqLite的方法
+			data(key,value)	data(key) 将任意的数据与jqLIte的对象代表的所有的元素关联起来或者从jqLite的对象代表的第一个元素中获取指定的key值
+			removeData(key)	
+			html()返回jqlite对象所代表得第一个元素的内容的html表达形式
+			ready(handler)注册一个监听器函数，该函数将在dom的内容被完全加载时候调用一次
+		6、从jqLite访问Angular的特性
+			controller() controller(name)返回当前约束或其父元素相关联的控制器
+			injector()返回与当前元素或其父元素相关联的注入器
+			isolatedScope	返回当前元素有相关联的独立的作用域，则返回该作用域，
+			scope()		返回与当前元素或其父元素相关联的作用域
+			inheritedDate(key)	沿着元素层次结构向上查找与制定key相匹配的值
+捌：复杂的指令
+	一、定义复杂指令
+		由指令定义对象所定义的属性
+		compile		制定一个编译函数
+		controller	为指令创建一个控制器函数
+		link		为指令制定链接函数
+		replace 	制定模板内容是否替换指令所应用到的元素
+		require		申明对摸个控制器的依赖
+		restrict	指定指令如何被使用
+		scope		为指令创建一个新的作用域或者一个隔壁的作用域
+		template	指定一个将被插入到HTML文档的模板
+		templateUrl	指定一个将被插入到HTML文档的外部模板
+		transclude	制定指令是否被用于包含任意内容
+	二、使用指令模板：
+		实质上是生成生命史的内容所必须的一种方法：
+		template:"<ul><li ng-repeat='item in data'>"+"{{item.price |currency}}</li></ul>"
+		使用函数作为模板：
+			不要使用模板的函数特性来生成需要以编程方式生成的内容，使用链接函数来代替
+			template:function(){
+				return angular.element(document,querySelector("#listTemplate")).html();
+			}
+		使用外部模板：
+			将模板分理处成一个单独的文件中定义的模板的内容
+			templateUrl:"itemTemplate.html"
+			付给templateUrl属性的的函数传入一个jqLite对象，该对象代表指令所应用的元素以及该元素上定义的属性集。
+		替换元素：
+			默认情况下，template的东西是插入指令里边的，但是replace定义属性能用于修改这个行为，使模板可以替换元素
+			replace属性不仅只是模板替换了元素，还将元素中的属性也转移给了模板的内容
+	三、管理指令的作用域：
+		默认情况下，链接函数被传入了控制器的作用域，该控制器管理者是图包含了指令所应用到的元素
+		1、创建多个控制器：
+			最简单但不优雅的方式就是重用指令来为指令的每个实例创建单独的控制器，这样每个实例就有自己的控制器了，当你无法控制所有指令的源代码也无法更改指令的工作方式时候也是挺有用的
+			<div ng-controller="scopeCtrl" class="panel-body" scope-demo ></div>
+			<div ng-controller="secondCtrl" class="panel-body" scope-demo ></div>
+		2、给每个指令创建自己的作用域:
+			directive里边scope:true
+			这将允许我在同一个控制器里复用这个指令，也就是说，我可以移除第二个控制器和简化程序
+			 <p>Name: <input ng-model="data.name" /></p>
+            <p>City: <input ng-model="city" /></p>
+            <p>Country: <input ng-model="country" /></p>
+			 .controller("scopeCtrl", function ($scope) {
+				$scope.data = { name: "Adam" };
+				$scope.city = "London";
+			});
+				
+			上诉的例子中，data.name由于是在对象上定义的，意味着这个值将会在指令的各个实例之间共享，而且，所有绑定到改睡醒的输入狂元素将会保持同步
+			
+			city：在控制器的作用域上直接被定义的，以为这所有的作用域将会从同一个初值开始吗但是在输入框元素修改时候会在自己的作用域上创建和修改自己的版本
+			
+			country没有被赋值，当相应的输入狂元素被修改时候，将会创建出一个独立的country
+			
+			这个方法的缺点是：你的指令的行为受所使用到的控制器的支配，因为对于作用域继承的默认规则总是奏效的
+		3、创建隔离的作用域
+			scope:{}
+			就是angular为指令的每个实例创建一个独立的作用域的地方，但是这个作用于并不继承自控制器的作用域，在创建一个打算在许多各种不同情况下重用的指令时候，一及不想要任何有控制器或作用于层次上的去哦他地方定义的对象和属性导致的继承时，还是很有用的
+			1>> 通过属性值进行绑定   @     scope:{local:"@nameprop"}
+				  在html里边的属性nameprop这里，将data.name传给了local：
+				  <div class="panel-body" scope-demo nameprop="{{data.name}}"></div>
+				  然后template里边就可以愉快的用local这个绑定的值了
+				 <script type="text/ng-template" id="scopeTemplate">
+						<div class="panel-body">
+							<p>Data Value: {{local}}</p>
+						</div>
+					</script>
+					
+				但是这个只是单向绑定，只能是controller里的值改变指令中的值，但是不能指令中的变化改变controller的值
+			警告：在个例作用域上的单向绑定总是被计算做字符串值，如果你想访问一个数组，必须是双向绑定，即使你不打算修改他
+			
+			2>>创建双向表达式： =     scope:{local:"=nameprop"}
+				
+				这时候是双向绑定，所以属性不能是应用，而是绑定：
+				<div class="panel-body" scope-demo nameprop=data.name></div>
+				这样，template就可以改变原来的html了：
+				 <script type="text/ng-template" id="scopeTemplate">
+						<input class="active" type="text" ng-model="local"/>
+				</script>
+			
+			3>>计算表达式
+				l.控制器定义一个方法,有一个返回值，是个字符串
+					 $scope.data = {name: "Adam",defaultCity: "London"};
+					$scope.getCity = function (name) {
+						return name == "Adam" ? $scope.data.defaultCity : "Unknown";
+					}
+				2.html里的指令的一个属性调用这个方法：
+					<div class="panel-body" scope-demo  city="getCity(data.name)" nameprop="data.name"></div>
+				3、指令中调用这个 调用了方法 的属性，将其的返回值付给cityFn
+					 scope: { local: "=nameprop", cityFn: "&city"}
+				4、template里边就可以用了：
+					 <script type="text/ng-template" id="scopeTemplate">
+						<p>Name: {{local}}, City: {{cityFn()}}</p>
+					</script>
+			4>>>使用个例作用域的数据来计算一个表达式：
+				<div class="panel-body" scope-demo  city="getCity(nameVal)" nameprop="data.name"></div>
+				<p>Name: {{local}}, City: {{cityFn({nameVal:local})}}</p>
+				这所产生的结果是创建出一个可以混合使用定义在隔离作用域和控制器作用域的数据对表达式进行计算的数据绑定。要小心的注意保证控制器作用于没有定义一个名字和表达式中参数相同的属性
+玖：高级制令特性：
+	一：嵌入包含：
+	
+	
+		1、创建指令的时候将transclude元素定义设置为true:		transclude:true
+			eg:
+					scope: true,
+                    template: function () {
+                        return angular.element(
+                            document.querySelector("#template")).html();
+                    },
+                    transclude: true
+					
+					
+					
+				html使用指令：
+					<panel>
+						The data value comes from the: {{dataSource}}
+					</panel>
+		2、将ng-transclude指令用到模板中，就放到想被插入包装元素的地方
+				在模板中调用指令显示的内容
+				eg:
+				<script type="text/ng-template" id="template">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>This is the panel</h4>
+						</div>
+						<div class="panel-body" ng-transclude></div>
+					</div>
+				</script>
+				
+		注意：这里dataSource是在控制器上被定义的吗不知指令的作用域
+	
+	二、使用编译函数（弱）		这一章不太会，老子不看了，有心情再说
+	
+		指令特别复杂，需要处理大量数据的时候，使用编译函数操作DOM并让谅解函数执行其他任务
+		可使用潜入包含来重复生成内容的能力，就像ng-repeat那样
+		
+	三、指令中使用控制器
+		能够创建出被其他指令所用的控制器
+			 .directive("productItem", function () {
+				return {
+					template: document.querySelector("#productTemplate").outerText,
+					require: "^productTable",
+					link: function (scope, element, attrs, ctrl) {
+						scope.$watch("item.quantity", function () {
+							ctrl.updateTotal();
+						});
+					}
+				}
+			})
+			.directive("productTable", function () {
+				return {
+					transclude: true,
+					scope: { value: "=productTable", data: "=productData" },
+					controller: function ($scope, $element, $attrs) {
+						this.updateTotal = function() {
+							var total = 0;
+							for (var i = 0; i < $scope.data.length; i++) {
+								total += Number($scope.data[i].quantity);
+							}
+							$scope.value = total;
+						}
+					}
+				}
+			});
+			//上边是两个directice，然后第二个controller定义的对象属性用于为指令创建一个控制器，这个函数可以申明对作用域（—$scop—）的依赖，对指令所应用到的元素的依赖，对元素属性的依赖。。。第一个direcitve有一require定义了对象属性用于声明对控制器的依赖，于是有：
+			require: "^productTable",
+		用于require属性的前缀
+		
+		None		假定两个指令都应用于同一个元素
+		^			在指令所应用到的元素的父元素上查找另一个指令
+		？			如果找不到指令并不报错---------小心使用
+		
+		当调用另一个控制器作用域内的元素的时候用ctrl.元素/方法name
+	
+	
+	四、创建自定义表单元素
+		见Capter :list07
+		1、处理外部变化：
+			NgModel控制器提供的基本方法与属性
+			$render()		这是当数据绑定的值发生变化的时候，NgModel控制器调用更新UI的函数.通常被自定义控制器所覆盖
+			
+			$setViewValue(Value)更新数据绑定的值
+			
+			$viewValue			返回应当被指令显示的格式化后的值
+			$modelValue		·	从作用域返回未格式化的值
+			$formatters			将$modelValue转成格式化函数构成的数组
+			
+			ngModel控制器提供的校验方法与属性
+			$setpristine()	将校验状态重设为原始状态，从而阻止校验被执行
+			$inEmpty()		可以设置给中灵宝市该控件没有值，默认实现是为了标准表单元素而设计的，用于查找空字符串，null或undefined等值
+			$parsers	一个用于校验模型值得函数
+			$error		返回一个对象，其各个属性对应于各个校验错误信息
+			$pristine	如果空间还没有被用户修改过，返回true
+			$dirty		如果控件被用户修改过返回true
+			$valid		如果模型值是有效的，返回true
+			$invalid	如果模型值是无效的，返回true
+	
+	

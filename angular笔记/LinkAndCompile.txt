@@ -1,0 +1,45 @@
+指令的执行过程分析
+	1、link:function(scope ,ele attrs, controller)这里是几个参数比较固定
+		mymodel.directive("hello", function () {
+            return {
+                restrict: "E",
+                template: '<div> Hi Ever y One',
+                replace: true,
+                link: function (scope, el, attrs, controller) {
+                    el.on("mouseenter", function () {
+                        console.log("鼠标进入");
+                    })
+                }
+            }
+        })
+	2、compile
+		注意：compile 和link不会同时出现，必须有个return 闭包
+			如果同时出现，只执行compile函数，但是compile函数并不常常执行
+			var mymodel = angular.module("myModel", []);
+			mymodel.directive("hello", function () {
+				return {
+					restrict: "AE",
+					compile: function ( el,attrs, transclude) {
+						console.log("指令编译。。。。。");
+						var tp1 = el.children().clone();
+						console.log(tp1);
+						for(var i=0;i<attrs.hello-1;i++){
+							el.append(tp1.clone());
+						}
+						return function(scope,el,attrs,controller){
+							console.log("指令链接")
+						}
+					},
+					link:function () {
+						console.log("我自己的link函数。。。")
+					}
+				}
+			})
+	3、区别
+		* compile函数的作用是对指令的模板进行转换
+		* Link的作用就是在模型和视图之间建立关联，包括建在元素上的注册时间监听
+		* scope的链接阶段才会被绑定到元素上，所以在compile阶段操作scope会报错
+		*对于同一个指令多个实例，compile只会执行一次，link指令每次都执行
+		*一般情况下，我们只要编写link函数就够了
+		*请注意：如果你编写的自定义函数的compile函数，自定义的link函数无效，因为compile函数应该返回一个link函数供后续处理
+		*
