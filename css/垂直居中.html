@@ -60,7 +60,7 @@
     </style>
 
 
-<h1>absolute +margin:auto</h1><span>这个比较常见，但也是子如果比较多的话，会自动向下排列
+<h1>4、absolute +margin:auto</h1><span>这个比较常见，但也是子如果比较多的话，会自动向下排列
 </span>
 <div class="margin-box">
     <div class="margin-content">
@@ -89,7 +89,7 @@
 </style>
 
 <h1>
-    absolute css3  
+    5、absolute css3  
 </h1><span >据说这个是兼容多行字体的,但是需要css3的新特性，需要考虑一下ie9</span>
 <div class="absuloteCss3-box">
 <div class="absuloteCss3-content">
@@ -125,7 +125,49 @@
 }
 </style>
 
+<h1>flex布局</h1>
+<div id="box">
+     今天先的霾严重的吓人，
+</div>
+<style>
+    #box {
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    background: #ddd;
+    padding: 100px 0;
+}
+</style>
 
+
+<h1>
+    弹性布局的操作</h1>
+<div class="box01">
+    <div class="child01">tzheli shi tanxingbuju </div>
+</div>
+flex-direction 的属性有四个，分别是：row 主轴为水平方向 row-reverse column    column-reverse 主轴喂垂直方向，起点在下
+
+
+justify-content属性定义了项目在主轴上的对齐方式，可能的取值有五个，分别如下（不过具体的对齐方式与主轴的方向有关，以下的值都是假设主轴为从左到右的）： 　　flex-start（该值是默认值）：左对齐； 　　flex-end：右对齐；
+　　center：居中对齐； 　　space-between：两端对齐，各个项目之间的间隔均相等； 　　space-around：各个项目两侧的间隔相等。
+
+<style>
+    .box {
+    width: 300px;
+    height: 300px;
+    background: #ddd;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.child {
+    width: 300px;
+    height: 100px;
+    background: #08BC67;
+    line-height: 100px;
+}
+</style>
 
 
 
