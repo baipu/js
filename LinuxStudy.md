@@ -4,48 +4,60 @@ tags: 新建,模板,小书匠
 grammar_cjkRuby: true
 ---
 [toc]
+
+# linux学习
+
 ## linux的介绍
+
 ### linux和window的区别
+
 linux严格区分大小写，注意和doc是不一样的
 linux的所有内容都以文件的形式保存，包括硬件
 linux没有扩展名的这种名称的
+
 - 压缩包:.gz  .bz2 .tar.baz2 .tgz等
-- 二进制： .rpm 
+- 二进制： .rpm
 - 网页 html .php
 - 脚本 .sh
 - 配置文件 .conf
+
 以上就是约定俗称的的名称但是如果没有
 window的程序不能直接在linux下运行
 
 ### 字符界面的优势
+
 占用的系统资源更少
 减少了出错，减少了被攻击的可能性
 
 ## linux的安装
-- ide 硬盘”、： /dev/hd*
 
+- ide 硬盘”、： /dev/hd*
 - scsi usb sata :  /dev/sd*
+
+## linux的常用命令
  
- ## linux的常用命令
- 
- [root@loclalhost ~]#
- root 当前登录用户
- localhost 主机名
- ~当前所在的目录
- `#`超级用户的提示符
- `$` 如果是普通用户的话，就显示$
- ### 一、命令基本格式
+[root@loclalhost ~]#
+root 当前登录用户
+localhost 主机名
+~当前所在的目录
+`#`超级用户的提示符
+`$` 如果是普通用户的话，就显示$
+
+### 一、命令基本格式
+
  命令 [选择] [参数]
- 注意 
+ 注意
+
  - 个别不支持上述的命令格式
  - 多个选项是后，可以写在一起
  - 简化 -a 完整的选项 --a 有两个刚
 
 #### 权限；
 
-``` 
+````shell
 -rw-r--r--
-```
+````
+
 文件类型：看第一位：如果是-文件 d目录 l软连接文件
 rw- (u所有者)r--（g所属组）r--（o其他人）: rwk r:red w:write写 x:执行
 #### ls

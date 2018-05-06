@@ -1,4 +1,4 @@
-# Flex布局
+# vFlex布局
 
 [TOC]
 
@@ -79,7 +79,7 @@ align-content
   .box{
      flex-wrap: nowrap | wrap | wrap-reverse;
    }
-  ````
+````
 
   它可能取三个值。
 
