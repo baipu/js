@@ -1,10 +1,8 @@
----
-
----
-
 # padding 
 
-##  1、 盒子模型和 padding
+[TOC]
+
+##  一、 盒子模型和 padding
 
 
 
@@ -31,7 +29,7 @@
 
 如图，如果padding 宽度为120 px的时候，但是width只有80px时候，就显示120px，局部使用，尽量使用无宽度以及宽度分离准则
 
-### 2 inline 的padding
+### 2. inline 的padding
 
 > 内联元素使用padding的时候，虽然会看起来变大，但是不影响其他元素的位置
 
@@ -106,7 +104,7 @@
 
 
 
-### 3 行内元素padding 的实际用法
+### 3. 行内元素padding 的实际用法
 
 1. 不影响样式的情况下，增加按钮点击面的大小
 2. 登录 |  注册
@@ -154,3 +152,147 @@
 </div>
 ```
 
+
+
+## 二、padding 百分比
+
+> 1、value不支持负数 （ margin兼容）
+>
+> 2、高度的百分比是相对于width的
+
+### 1、对于padding 百分比在block的使用
+
+利用二特性可以写自适应宽高比恒定的div
+
+````Html
+ <style>
+        .point05 .box {
+            padding: 50% 50%;
+            position: relative;
+        }
+        .point05 .box>.img {
+            position: absolute;
+            width: 10%;
+            height: 10%;
+            left: 0;
+            top: 0;
+        }
+    </style>
+    <h3>padding and percent</h3>
+    <div class="point05">
+        <div class="box">
+            <img class="img" src="./img/test.jpg" width="100"> 
+        </div>
+    </div>
+    <div>
+        这里使用percent实现框框随着屏幕改变而改变，但是宽高比是不变化的,可以拖动浏览器宽度看效果
+    </div>
+````
+
+### 2、对于padding百分比 在inline的使用
+
+内敛元素的特性：
+
+>1、相对于宽度的调整
+>
+>2、默认的高度和宽度细节有差异
+>
+>3、padding 会断行
+
+先看断行：
+
+````html
+    
+<style>
+    .point06{
+            width: 130px
+        }
+    .point06 .box {
+       border: 2px dashed #cd0000;
+    }
+
+    .point06 span {
+        padding: 50%;
+        /* font-size: 0; */
+        background: gray
+    }
+</style>
+<h3>padding percent in inline</h3>
+<div class="point06">
+    <div class="box">
+        <span >has 内有文字若干 </span>
+    </div>
+</div>
+````
+
+效果如下：![padding_percent_inline](/Users/baipu/工作文件/study/github/js/css/padding/padding_percent_inline.jpg)
+
+出现这种情况的原因以及注意点：
+
+1、padding+文字的长度一行放不下了，so padding-left就随着文字换行了
+
+2、宽度改变，如果里边没有任何文字，宽度就和容器一样了，但是还有文字，所以就把宽度撑的宽了，
+
+3、如果把文字删了，只是一个矩形，而不是正方形，why？还是有字符的，如果要改变字符，将font-size改编成0就好了
+
+```Html
+ .point06 span {
+        padding: 50%;
+        font-size: 0;
+        background: gray
+    }
+```
+
+
+
+## 三、内置的padding
+
+1. ul/ol
+
+   > 内置padding-left，单位是px，所以字变大的时候可能会有问题，建议 font-size的时候，自己设置成 22px
+
+2. 表单内置padding
+
+   Eg:
+
+   1. all` input`
+   2.  all `button`
+   3. ie8+ Firefox ` select `
+   4. `Radio checkbox` **没有**内置的`padding`
+
+3. 删除/修改 `button`的内置`padding`
+
+   ```Css
+   button::-moz-focus-inner{
+           padding:0;/*用来删除firefox下的padding*/
+       }
+   button{
+       overflow: visible；/*文字变多，padding也变大时候，用这个可以限制进行控制*/
+   }
+   ```
+
+4. button 按钮兼容性不好，所以用a标签，但是a标签很多时候事件用起来不舒服，所以可以用label实现一些button
+
+   > `clip: rect(0,0,0,0)`
+
+   ```css
+   <style> 
+    .point07 button{
+           position: absolute;
+           clip: rect(0,0,0,0)
+       }
+   
+       .point07 label{
+           position: absolute;
+           line-height: 20px;
+           padding: 10px;
+       }
+   
+   </style>
+   <div class="point07">
+       <button id="btn"></button>
+       <label for="btn">按钮</label>
+   </div>
+   
+   
+   ```
